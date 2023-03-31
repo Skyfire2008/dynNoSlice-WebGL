@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"outDir": "bin",
+		"target": "ESNext",
+		"rootDir": "./src/",
+		"module": "none"
+	},
+	"compileOnSave": true,
+	"include": [
+		"src/**/*",
+	],
+	"exclude": [
+		"node_modules"
+	]
+}
