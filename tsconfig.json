@@ -3,7 +3,7 @@
 		"outDir": "bin",
 		"target": "ESNext",
 		"rootDir": "./src/",
-		"module": "none"
+		"module": "ES2015"
 	},
 	"compileOnSave": true,
 	"include": [
