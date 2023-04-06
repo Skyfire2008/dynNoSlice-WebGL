@@ -2,11 +2,15 @@
 <html>
 
 <head>
+	<script src="knockout-latest.debug.js"></script>
+	<script src="ui/fileUpload.js"></script>
 	<script src="index.js"></script>
 </head>
 
 <body>
 	<div>
+		<file-upload
+			params="accepts: '.json', id: 'graph-file-upload', label: 'Select graph file', observable: 'graphFile'"></file-upload>
 	</div>
 	<canvas id="mainCanvas" width="1280" height="720"></canvas>
 </body>

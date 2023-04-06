@@ -1,53 +1,57 @@
-export interface File {
-	name: string;
-	contents: string;
-}
+namespace dynnoslice.ui {
 
-/**
- * Custom element for uploading files
- */
-interface ViewModel {
-	accepts: string;
-	id: string;
-	label: string;
-	observable: KnockoutObservable<File>;
-}
+	export interface File {
+		name: string;
+		contents: string;
+	}
 
-ko.components.register("file-upload", {
-	viewModel: {
-		createViewModel: (params: any, componentInfo: KnockoutComponentTypes.ComponentInfo) => {
+	/**
+	 * Custom element for uploading files
+	 */
+	interface ViewModel {
+		accepts: string;
+		id: string;
+		label: string;
+		observable: KnockoutObservable<File>;
+	}
 
-			const viewModel: ViewModel = {
-				accepts: params.accepts,
-				id: params.id,
-				label: params.label,
-				observable: params.observable
-			};
+	ko.components.register("file-upload", {
+		viewModel: {
+			createViewModel: (params: any, componentInfo: KnockoutComponentTypes.ComponentInfo) => {
 
-			const input: HTMLInputElement = (<HTMLElement>componentInfo.element).querySelector("input");
-			input.addEventListener("change", () => {
-				if (input.files.length > 0) {
+				const viewModel: ViewModel = {
+					accepts: params.accepts,
+					id: params.id,
+					label: params.label,
+					observable: params.observable
+				};
 
-					const fr = new FileReader();
+				const input: HTMLInputElement = (<HTMLElement>componentInfo.element).querySelector("input");
+				input.addEventListener("change", () => {
+					if (input.files.length > 0) {
 
-					fr.addEventListener("load", (e: ProgressEvent) => {
-						viewModel.observable({
-							name: input.files[0].name,
-							contents: <string>fr.result
+						const fr = new FileReader();
+
+						fr.addEventListener("load", (e: ProgressEvent) => {
+							viewModel.observable({
+								name: input.files[0].name,
+								contents: <string>fr.result
+							});
 						});
-					});
 
-					fr.readAsText(input.files[0]);
-				}
-			});
+						fr.readAsText(input.files[0]);
+					}
+				});
 
-			return viewModel;
-		}
-	},
-	template:
-		`
+				return viewModel;
+			}
+		},
+		template:
+			`
         <div>
             <label data-bind="attr: {for: id}, text: label+':'"></label>
             <input type="file" data-bind="attr: {accept: accepts, id: id}"></input>
         </div>`
-});
+	});
+
+}
