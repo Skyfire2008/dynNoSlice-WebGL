@@ -11,6 +11,9 @@ namespace dynnoslice {
 		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
 		ctx = mainCanvas.getContext("webgl2");
 
+		graphics.Shader.init(ctx);
+		let shader = new graphics.Shader(shaders.drawGraphVert, shaders.drawGraphFrag);
+
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null)
 		};

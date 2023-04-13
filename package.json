@@ -8,7 +8,8 @@
 	},
 	"scripts": {
 		"compile": "tsc",
+		"generateShaderFile": "node scripts/generateShaderFile.js",
 		"copy": "node scripts/copy.js",
-		"build": "npm run compile && npm run copy"
+		"build": "npm run generateShaderFile && npm run compile && npm run copy"
 	}
 }
