@@ -68,8 +68,9 @@ namespace graphics {
 		}
 
 		public drawShape(shape: Shape) {
+			console.log(gl.isVertexArray(shape.vao));
 			gl.bindVertexArray(shape.vao);
-			gl.drawElements(gl.LINES, shape.indices.length * 2, gl.UNSIGNED_SHORT, 0);
+			gl.drawElements(gl.LINES, shape.indices.length, gl.UNSIGNED_SHORT, 0);
 			gl.bindVertexArray(null);
 		}
 	}
