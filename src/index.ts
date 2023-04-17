@@ -9,6 +9,7 @@ namespace dynnoslice {
 	let shader: graphics.Shader;
 	let network: graph.Network;
 	let shapes: Array<graphics.Shape> = [];
+	let positionTexture: graphics.PositionTexture = null;
 
 	window.addEventListener("load", () => {
 		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
@@ -22,15 +23,24 @@ namespace dynnoslice {
 		};
 		viewModel.graphFile.subscribe((file) => {
 			network = JSON.parse(file.contents);
+
+			//cleanup old GPU data
 			for (const shape of shapes) {
 				shape.dispose();
 			}
-			shapes = graph.toShapes(network);
+			if (positionTexture != null) {
+				positionTexture.dispose();
+			}
+
+			[shapes, positionTexture] = graph.toShapes(network);
 			for (const shape of shapes) {
 				shape.init();
 			}
+			positionTexture.init();
 
 			shader.use();
+			positionTexture.bind(graphics.gl.TEXTURE0);
+			shader.setInt("posTex", 0);
 			shader.drawShape(shapes[0]);
 		});
 

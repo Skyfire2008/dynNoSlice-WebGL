@@ -48,6 +48,7 @@ namespace graphics {
 		}
 
 		public setInt(name: string, value: number) {
+			console.log(gl.getUniformLocation(this.program, name));
 			gl.uniform1i(gl.getUniformLocation(this.program, name), value);
 		}
 

@@ -4,9 +4,13 @@ precision highp float;
 layout(location = 0) in vec3 colorIn;
 layout(location = 1) in vec2 posIn;
 
+uniform sampler2D posTex;
+
 out vec4 color;
 
 void main(){
-	gl_Position = vec4(posIn, 0.0, 1.0);
-	color = vec4(colorIn, 1.0);
+	vec2 texPos = texelFetch(posTex, ivec2(gl_VertexID, 0), 0).rg;
+	float diff = distance(texPos, posIn);
+	gl_Position = vec4(texPos, 0.0, 1.0);
+	color = vec4(diff, 0.0, 0.0, 1.0);
 }
