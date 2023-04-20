@@ -31,7 +31,9 @@ namespace graphics {
 		}
 
 		public dispose() {
-			gl.deleteTexture(this.id);
+			if (this.id != null) {
+				gl.deleteTexture(this.id);
+			}
 		}
 	}
 }

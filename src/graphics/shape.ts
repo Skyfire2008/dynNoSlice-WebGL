@@ -8,7 +8,6 @@ namespace graphics {
 		public vao: WebGLVertexArrayObject;
 		public indVbo: WebGLBuffer;
 		public colorVbo: WebGLBuffer;
-		public posVbo: WebGLBuffer;
 
 		constructor(indices: Uint16Array, colors: Float32Array, positions: Float32Array) {
 			this.indices = indices;
@@ -28,13 +27,6 @@ namespace graphics {
 			gl.enableVertexAttribArray(0);
 			gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
-			//TODO: remove later
-			this.posVbo = gl.createBuffer();
-			gl.bindBuffer(gl.ARRAY_BUFFER, this.posVbo);
-			gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
-			gl.enableVertexAttribArray(1);
-			gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
-
 			//create index VBO
 			this.indVbo = gl.createBuffer();
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indVbo);
@@ -47,7 +39,6 @@ namespace graphics {
 			if (this.vao != null) {
 				gl.deleteBuffer(this.colorVbo);
 				gl.deleteBuffer(this.indVbo);
-				gl.deleteBuffer(this.posVbo);
 				gl.deleteVertexArray(this.vao);
 			}
 		}

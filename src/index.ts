@@ -18,6 +18,10 @@ namespace dynnoslice {
 		graphics.Shader.init(ctx);
 		shader = new graphics.Shader(shaders.drawGraphVert, shaders.drawGraphFrag);
 
+		const foo = new graphics.Shader(shaders.testFramebufferVert, shaders.testFramebufferFrag);
+		foo.use();
+		foo.drawQuad(1280, 720);
+
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null)
 		};

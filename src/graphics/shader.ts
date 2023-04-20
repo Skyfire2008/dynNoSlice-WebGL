@@ -5,9 +5,12 @@ namespace graphics {
 	export class Shader {
 
 		private program: WebGLProgram;
+		private static quad: Quad;
 
 		public static init(gl: WebGL2RenderingContext) {
 			graphics.gl = gl;
+			Shader.quad = new Quad();
+			Shader.quad.init();
 		}
 
 		public static loadShader(type: number, src: string): WebGLShader {
@@ -48,7 +51,6 @@ namespace graphics {
 		}
 
 		public setInt(name: string, value: number) {
-			console.log(gl.getUniformLocation(this.program, name));
 			gl.uniform1i(gl.getUniformLocation(this.program, name), value);
 		}
 
@@ -69,9 +71,15 @@ namespace graphics {
 		}
 
 		public drawShape(shape: Shape) {
-			console.log(gl.isVertexArray(shape.vao));
 			gl.bindVertexArray(shape.vao);
 			gl.drawElements(gl.LINES, shape.indices.length, gl.UNSIGNED_SHORT, 0);
+			gl.bindVertexArray(null);
+		}
+
+		public drawQuad(width: number, height: number) {
+			gl.viewport(0, 0, width, height);
+			gl.bindVertexArray(Shader.quad.vao);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			gl.bindVertexArray(null);
 		}
 	}
