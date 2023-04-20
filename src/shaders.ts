@@ -31,7 +31,7 @@ in vec4 color;
 out vec4 fragColor;
 
 void main(){
-	fragColor = color;
+	fragColor = vec4(1.0, 0.8, 0.4, 1.0);
 }`;
 	export const testFramebufferVert = `#version 300 es
 precision highp float;
@@ -43,6 +43,6 @@ out vec4 color;
 
 void main(){
 	color = vec4(uvIn, 1.0, 1.0);
-	gl_Position = vec4(uvIn, 0.0, 1.0);
+	gl_Position = vec4(posIn, 0.0, 1.0);
 }`;
 }
