@@ -26,12 +26,15 @@ void main(){
 	export const testFramebufferFrag = `#version 300 es
 precision highp float;
 
-in vec4 color;
+in vec2 texCoords;
 
-out vec4 fragColor;
+out vec2 fragColor;
+
+uniform sampler2D posTex;
 
 void main(){
-	fragColor = vec4(1.0, 0.8, 0.4, 1.0);
+	vec2 color = texture(posTex, texCoords).rg;
+	fragColor = color*0.9;
 }`;
 	export const testFramebufferVert = `#version 300 es
 precision highp float;
@@ -39,10 +42,10 @@ precision highp float;
 layout(location = 0) in vec2 posIn;
 layout(location = 1) in vec2 uvIn;
 
-out vec4 color;
+out vec2 texCoords;
 
 void main(){
-	color = vec4(uvIn, 1.0, 1.0);
+	texCoords = uvIn;
 	gl_Position = vec4(posIn, 0.0, 1.0);
 }`;
 }

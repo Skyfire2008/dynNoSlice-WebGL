@@ -42,8 +42,8 @@ namespace graph {
 				colors[i * 3 + 1] = color[1];
 				colors[i * 3 + 2] = color[2];
 
-				positions[i * 2] = Math.random();
-				positions[i * 2 + 1] = Math.random();
+				positions[i * 2] = Math.random() * 2 - 1;
+				positions[i * 2 + 1] = Math.random() * 2 - 1;
 
 				texture[textureOffset + node * 2] = positions[i * 2];
 				texture[textureOffset + node * 2 + 1] = positions[i * 2 + 1];

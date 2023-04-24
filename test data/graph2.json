@@ -1,0 +1,436 @@
+{
+	"layers": [
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		},
+		{
+			"nodes": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			],
+			"edges": [
+				{
+					"from": 0,
+					"to": 1,
+					"label": "edge 0->1"
+				},
+				{
+					"from": 1,
+					"to": 2,
+					"label": "edge 1->2"
+				},
+				{
+					"from": 2,
+					"to": 3,
+					"label": "edge 2->3"
+				},
+				{
+					"from": 3,
+					"to": 4,
+					"label": "edge 3->4"
+				},
+				{
+					"from": 4,
+					"to": 5,
+					"label": "edge 4->5"
+				},
+				{
+					"from": 5,
+					"to": 6,
+					"label": "edge 5->6"
+				},
+				{
+					"from": 6,
+					"to": 7,
+					"label": "edge 6->7"
+				},
+				{
+					"from": 7,
+					"to": 0,
+					"label": "edge 7->0"
+				}
+			]
+		}
+	]
+}

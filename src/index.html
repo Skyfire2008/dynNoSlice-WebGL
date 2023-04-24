@@ -20,8 +20,9 @@
 	<div>
 		<file-upload
 			params="accepts: '.json', id: 'graph-file-upload', label: 'Select graph file', observable: graphFile"></file-upload>
+		<button data-bind="click: step">Step</button>
+		<canvas id="mainCanvas" width="1280" height="720"></canvas>
 	</div>
-	<canvas id="mainCanvas" width="1280" height="720"></canvas>
 </body>
 
 </html>

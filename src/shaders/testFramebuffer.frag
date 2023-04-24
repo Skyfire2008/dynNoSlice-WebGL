@@ -1,10 +1,13 @@
 #version 300 es
 precision highp float;
 
-in vec4 color;
+in vec2 texCoords;
 
-out vec4 fragColor;
+out vec2 fragColor;
+
+uniform sampler2D posTex;
 
 void main(){
-	fragColor = vec4(1.0, 0.8, 0.4, 1.0);
+	vec2 color = texture(posTex, texCoords).rg;
+	fragColor = color*0.9;
 }
