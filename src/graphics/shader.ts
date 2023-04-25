@@ -11,6 +11,10 @@ namespace graphics {
 			graphics.gl = gl;
 			Shader.quad = new Quad();
 			Shader.quad.init();
+        }
+        
+        public static clear() {
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		}
 
 		public static loadShader(type: number, src: string): WebGLShader {
@@ -64,10 +68,6 @@ namespace graphics {
 
 		public use() {
 			gl.useProgram(this.program);
-		}
-
-		public clear() {
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		}
 
 		public drawShape(shape: Shape) {

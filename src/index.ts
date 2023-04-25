@@ -19,8 +19,10 @@ namespace dynnoslice {
 
 	window.addEventListener("load", () => {
 		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
-		ctx = mainCanvas.getContext("webgl2");
-		ctx.clearColor(0, 0, 0, 1.0);
+        ctx = mainCanvas.getContext("webgl2");
+        const renderToFloatExt = ctx.getExtension("EXT_color_buffer_float");
+        console.log(renderToFloatExt);
+		ctx.clearColor(0.5, 0.5, 0.5, 1.0);
 
 		graphics.Shader.init(ctx);
 		shader = new graphics.Shader(shaders.drawGraphVert, shaders.drawGraphFrag);
@@ -31,14 +33,15 @@ namespace dynnoslice {
 
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null),
-			step: () => {
+            step: () => {
+                graphics.Shader.clear();
+
 				let boundFb = flip ? fb1 : fb0;
 				let tex = flip ? positionTexture : temp;
 				let srcTex = flip ? temp : positionTexture;
 
-				graphics.gl.clear(graphics.gl.COLOR_BUFFER_BIT);
-
-				boundFb.bind();
+                boundFb.bind();
+                graphics.Shader.clear();
 				foo.use();
 				tex.bind(graphics.gl.TEXTURE0);
 				foo.setInt("posTex", 0);
