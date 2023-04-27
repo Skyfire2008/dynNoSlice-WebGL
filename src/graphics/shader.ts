@@ -10,10 +10,9 @@ namespace graphics {
 		public static init(gl: WebGL2RenderingContext) {
 			graphics.gl = gl;
 			Shader.quad = new Quad();
-			Shader.quad.init();
-        }
-        
-        public static clear() {
+		}
+
+		public static clear() {
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		}
 

@@ -11,9 +11,7 @@ namespace graphics {
 			this.texture = texture;
 			this.width = width;
 			this.height = height;
-		}
 
-		public init() {
 			this.fb = gl.createFramebuffer();
 			gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb);
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
@@ -33,9 +31,7 @@ namespace graphics {
 		}
 
 		public dispose() {
-			if (this.fb != null) {
-				gl.deleteFramebuffer(this.fb);
-			}
+			gl.deleteFramebuffer(this.fb);
 		}
 	}
 }

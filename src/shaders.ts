@@ -33,8 +33,13 @@ out vec2 fragColor;
 uniform sampler2D posTex;
 
 void main(){
+	vec2 disp = vec2(1.0/float(textureSize(posTex, 0).x), 0);
 	vec2 color = texture(posTex, texCoords).rg;
-	fragColor = color*0.9;
+	color *= 14.0;
+	color += texture(posTex, texCoords+disp).rg + texture(posTex, texCoords-disp).rg;
+	color /= 16.0;
+	vec2 normalized = normalize(color);
+	fragColor = (3.0*color + normalized)/4.0;
 }
 `;
 	export const testFramebufferVert = `#version 300 es
@@ -45,8 +50,10 @@ layout(location = 1) in vec2 uvIn;
 
 out vec2 texCoords;
 
+uniform sampler2D posTex;
+
 void main(){
-	texCoords = (posIn+vec2(1.0, 1.0))/2.0;
+	texCoords = uvIn;
 	gl_Position = vec4(posIn, 0.0, 1.0);
 }
 `;

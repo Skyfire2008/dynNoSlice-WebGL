@@ -10,8 +10,8 @@ namespace dynnoslice {
 	let shader: graphics.Shader;
 	let network: graph.Network;
 	let shapes: Array<graphics.Shape> = [];
-	let positionTexture: graphics.PositionTexture = null;
-	let temp: graphics.PositionTexture;
+	let positionTexture: graphics.Texture = null;
+	let temp: graphics.Texture;
 
 	let fb0: graphics.Framebuffer;
 	let fb1: graphics.Framebuffer;
@@ -19,10 +19,10 @@ namespace dynnoslice {
 
 	window.addEventListener("load", () => {
 		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
-        ctx = mainCanvas.getContext("webgl2");
-        const renderToFloatExt = ctx.getExtension("EXT_color_buffer_float");
-        console.log(renderToFloatExt);
-		ctx.clearColor(0.5, 0.5, 0.5, 1.0);
+		ctx = mainCanvas.getContext("webgl2");
+		const renderToFloatExt = ctx.getExtension("EXT_color_buffer_float");
+		console.log(renderToFloatExt);
+		ctx.clearColor(1.0, 1.0, 1.0, 1.0);
 
 		graphics.Shader.init(ctx);
 		shader = new graphics.Shader(shaders.drawGraphVert, shaders.drawGraphFrag);
@@ -33,15 +33,15 @@ namespace dynnoslice {
 
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null),
-            step: () => {
-                graphics.Shader.clear();
+			step: () => {
+				graphics.Shader.clear();
 
 				let boundFb = flip ? fb1 : fb0;
 				let tex = flip ? positionTexture : temp;
 				let srcTex = flip ? temp : positionTexture;
 
-                boundFb.bind();
-                graphics.Shader.clear();
+				boundFb.bind();
+				graphics.Shader.clear();
 				foo.use();
 				tex.bind(graphics.gl.TEXTURE0);
 				foo.setInt("posTex", 0);
@@ -54,10 +54,10 @@ namespace dynnoslice {
 				shader.setInt("posTex", 0);
 				shader.drawShape(shapes[0]);
 
-				foo.use();
+				/*foo.use();
 				srcTex.bind(graphics.gl.TEXTURE0);
 				foo.setInt("posTex", 0);
-				foo.drawQuad(positionTexture.width, positionTexture.height);
+				foo.drawQuad(positionTexture.width, positionTexture.height);*/
 
 				flip = !flip;
 			}
@@ -80,16 +80,11 @@ namespace dynnoslice {
 			}
 
 			[shapes, positionTexture] = graph.toShapes(network);
-			for (const shape of shapes) {
-				shape.init();
-			}
-			positionTexture.init();
+
 			fb0 = new graphics.Framebuffer(positionTexture.id, positionTexture.width, positionTexture.height);
-			temp = new graphics.PositionTexture(positionTexture.width, positionTexture.height, new Float32Array(positionTexture.width * positionTexture.height * 2));
-			temp.init();
+			temp = graphics.Texture.makePositionTexture(positionTexture.width, positionTexture.height, new Float32Array(positionTexture.width * positionTexture.height * 2));
 			fb1 = new graphics.Framebuffer(temp.id, temp.width, temp.height);
-			fb0.init();
-			fb1.init();
+			flip = true;
 
 			shader.use();
 			positionTexture.bind(graphics.gl.TEXTURE0);

@@ -5,9 +5,7 @@ namespace graphics {
 		public posVbo: WebGLBuffer;
 		public uvVbo: WebGLBuffer;
 
-		constructor() { }
-
-		public init() {
+		constructor() {
 			const positions: Array<number> = [
 				-1.0, 1.0,
 				-1.0, -1.0,
@@ -15,10 +13,10 @@ namespace graphics {
 				1.0, -1.0
 			];
 			const uvs: Array<number> = [
-				0, 0,
 				0, 1,
-				1, 0,
-				1, 1
+				0, 0,
+				1, 1,
+				1, 0
 			];
 
 			this.vao = gl.createVertexArray();
@@ -35,16 +33,14 @@ namespace graphics {
 			this.uvVbo = gl.createBuffer();
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.uvVbo);
 			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
-			gl.enableVertexAttribArray(0);
+			gl.enableVertexAttribArray(1);
 			gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
 		}
 
 		public dispose() {
-			if (this.vao != null) {
-				gl.deleteBuffer(this.posVbo);
-				gl.deleteBuffer(this.uvVbo);
-				gl.deleteVertexArray(this.vao);
-			}
+			gl.deleteBuffer(this.posVbo);
+			gl.deleteBuffer(this.uvVbo);
+			gl.deleteVertexArray(this.vao);
 		}
 	}
 }

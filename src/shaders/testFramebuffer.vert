@@ -6,7 +6,9 @@ layout(location = 1) in vec2 uvIn;
 
 out vec2 texCoords;
 
+uniform sampler2D posTex;
+
 void main(){
-	texCoords = (posIn+vec2(1.0, 1.0))/2.0;
+	texCoords = uvIn;
 	gl_Position = vec4(posIn, 0.0, 1.0);
 }

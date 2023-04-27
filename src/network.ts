@@ -14,7 +14,7 @@ namespace graph {
 		label: string;
 	}
 
-	export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.PositionTexture] => {
+	export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.Texture] => {
 		const shapes: Array<graphics.Shape> = [];
 
 		let width = 0;
@@ -59,6 +59,6 @@ namespace graph {
 			shapes.push(new graphics.Shape(indices, colors, positions));
 		}
 
-		return [shapes, new graphics.PositionTexture(width, net.layers.length, texture)];
+		return [shapes, graphics.Texture.makePositionTexture(width, net.layers.length, texture)];
 	};
 }

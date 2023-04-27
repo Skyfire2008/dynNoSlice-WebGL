@@ -13,9 +13,7 @@ namespace graphics {
 			this.indices = indices;
 			this.colors = colors;
 			this.positions = positions;
-		}
 
-		public init() {
 			//create VAO
 			this.vao = gl.createVertexArray();
 			gl.bindVertexArray(this.vao);
@@ -36,11 +34,9 @@ namespace graphics {
 		}
 
 		public dispose() {
-			if (this.vao != null) {
-				gl.deleteBuffer(this.colorVbo);
-				gl.deleteBuffer(this.indVbo);
-				gl.deleteVertexArray(this.vao);
-			}
+			gl.deleteBuffer(this.colorVbo);
+			gl.deleteBuffer(this.indVbo);
+			gl.deleteVertexArray(this.vao);
 		}
 
 	}

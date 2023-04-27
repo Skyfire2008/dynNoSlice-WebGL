@@ -1,0 +1,44 @@
+namespace graphics {
+
+	export class Texture {
+
+		public readonly id: WebGLTexture;
+		public readonly width: number;
+		public readonly height: number;
+
+		/**
+		 * Creates a texture to store the position of graph's vertices
+		 * @param width max vertices per layers
+		 * @param height number of layers
+		 * @param data positions in a fixed type array
+		 * @returns texture
+		 */
+		public static makePositionTexture(width: number, height: number, data: Float32Array) {
+			const id = gl.createTexture();
+			gl.bindTexture(gl.TEXTURE_2D, id);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG32F, width, height, 0, gl.RG, gl.FLOAT, data);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+			gl.bindTexture(gl.TEXTURE_2D, null);
+			return new Texture(id, width, height);
+		}
+
+		private constructor(id: WebGLTexture, width: number, height: number) {
+			this.id = id;
+			this.width = width;
+			this.height = height;
+		}
+
+		public bind(unit: number) {
+			gl.activeTexture(unit);
+			gl.bindTexture(gl.TEXTURE_2D, this.id);
+		}
+
+		public dispose() {
+			gl.deleteTexture(this.id);
+		}
+	}
+}
