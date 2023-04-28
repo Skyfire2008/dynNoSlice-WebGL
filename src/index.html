@@ -23,7 +23,7 @@
 			params="accepts: '.json', id: 'graph-file-upload', label: 'Select graph file', observable: graphFile"></file-upload>
 		<canvas id="mainCanvas" width="1280" height="720"></canvas>
 		<button data-bind="click: step">Step</button>
-		<time-slider params="data: timestamps"></time-slider>
+		<time-slider params="data: timestamps, onChange: (e)=>{console.log(e);}"></time-slider>
 	</div>
 </body>
 
