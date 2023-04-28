@@ -2,6 +2,7 @@ namespace dynnoslice {
 
 	interface ViewModel {
 		graphFile: KnockoutObservable<ui.File>;
+		timestamps: KnockoutObservable<Array<number>>;
 		step: () => void;
 	}
 
@@ -33,6 +34,7 @@ namespace dynnoslice {
 
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null),
+			timestamps: ko.observable([]),
 			step: () => {
 				graphics.Shader.clear();
 
@@ -64,6 +66,8 @@ namespace dynnoslice {
 		};
 		viewModel.graphFile.subscribe((file) => {
 			network = JSON.parse(file.contents);
+
+			viewModel.timestamps(network.layers.map((layer) => layer.timestamp));
 
 			//cleanup old GPU data
 			for (const shape of shapes) {

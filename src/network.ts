@@ -4,6 +4,7 @@ namespace graph {
 	}
 
 	export interface Layer {
+		timestamp: number;
 		nodes: Array<number>;
 		edges: Array<Edge>;
 	}

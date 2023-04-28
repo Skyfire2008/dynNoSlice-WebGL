@@ -1,6 +1,7 @@
 {
 	"layers": [
 		{
+			"timestamp": 0,
 			"nodes": [
 				0,
 				1,
@@ -55,6 +56,7 @@
 			]
 		},
 		{
+			"timestamp": 1,
 			"nodes": [
 				0,
 				1,
@@ -109,6 +111,7 @@
 			]
 		},
 		{
+			"timestamp": 2,
 			"nodes": [
 				0,
 				1,
@@ -163,6 +166,7 @@
 			]
 		},
 		{
+			"timestamp": 3,
 			"nodes": [
 				0,
 				1,
@@ -217,6 +221,7 @@
 			]
 		},
 		{
+			"timestamp": 4,
 			"nodes": [
 				0,
 				1,
@@ -271,6 +276,7 @@
 			]
 		},
 		{
+			"timestamp": 8,
 			"nodes": [
 				0,
 				1,
@@ -325,6 +331,7 @@
 			]
 		},
 		{
+			"timestamp": 9,
 			"nodes": [
 				0,
 				1,
@@ -379,6 +386,7 @@
 			]
 		},
 		{
+			"timestamp": 10,
 			"nodes": [
 				0,
 				1,
