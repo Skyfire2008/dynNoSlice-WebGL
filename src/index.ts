@@ -4,6 +4,8 @@ namespace dynnoslice {
 		graphFile: KnockoutObservable<ui.File>;
 		timestamps: KnockoutObservable<Array<number>>;
 		step: () => void;
+		onSliderChange: (value: ui.TimeSliderValue) => void;
+		sliderValue: ui.TimeSliderValue;
 	}
 
 	let mainCanvas: HTMLCanvasElement;
@@ -19,6 +21,18 @@ namespace dynnoslice {
 	let flip = true;
 
 	window.addEventListener("load", () => {
+
+		const redraw = () => {
+			shader.use();
+			graphics.Shader.clear();
+			let srcTex = flip ? temp : positionTexture;
+			srcTex.bind(graphics.gl.TEXTURE0);
+			shader.setInt("posTex", 0);
+			shader.setInt("index", viewModel.sliderValue.index);
+			shader.setFloat("mult", viewModel.sliderValue.mult);
+			shader.drawShape(shapes[0]);
+		};
+
 		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
 		ctx = mainCanvas.getContext("webgl2");
 		const renderToFloatExt = ctx.getExtension("EXT_color_buffer_float");
@@ -36,8 +50,6 @@ namespace dynnoslice {
 			graphFile: ko.observable(null),
 			timestamps: ko.observable([]),
 			step: () => {
-				graphics.Shader.clear();
-
 				let boundFb = flip ? fb1 : fb0;
 				let tex = flip ? positionTexture : temp;
 				let srcTex = flip ? temp : positionTexture;
@@ -51,10 +63,11 @@ namespace dynnoslice {
 				graphics.gl.bindFramebuffer(graphics.gl.FRAMEBUFFER, null);
 
 				graphics.gl.viewport(0, 0, 1280, 720);
-				shader.use();
+				redraw();
+				/*shader.use();
 				srcTex.bind(graphics.gl.TEXTURE0);
 				shader.setInt("posTex", 0);
-				shader.drawShape(shapes[0]);
+				shader.drawShape(shapes[0]);*/
 
 				/*foo.use();
 				srcTex.bind(graphics.gl.TEXTURE0);
@@ -62,6 +75,15 @@ namespace dynnoslice {
 				foo.drawQuad(positionTexture.width, positionTexture.height);*/
 
 				flip = !flip;
+			},
+			onSliderChange: (e) => {
+				Object.assign(viewModel.sliderValue, e);
+				redraw();
+			},
+			sliderValue: {
+				time: 0,
+				index: 0,
+				mult: 0
 			}
 		};
 		viewModel.graphFile.subscribe((file) => {
