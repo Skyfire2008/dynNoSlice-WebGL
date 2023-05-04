@@ -5,6 +5,7 @@ in vec2 texCoords;
 
 out vec2 fragColor;
 
+uniform lowp isampler2D presenceTex;
 uniform sampler2D posTex;
 
 void main(){
@@ -13,5 +14,5 @@ void main(){
 	
 	vec2 centre = (pos + texture(posTex, texCoords+disp).rg + texture(posTex, texCoords-disp).rg)/3.0;
 
-	fragColor = mix(pos, centre, 0.5);
+	fragColor = mix(pos, centre, 0.9);
 }

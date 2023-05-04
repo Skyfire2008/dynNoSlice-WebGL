@@ -15,7 +15,7 @@ namespace graph {
 		label: string;
 	}
 
-	export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.Texture] => {
+	export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.Texture, graphics.Texture] => {
 		const shapes: Array<graphics.Shape> = [];
 
 		let width = 0;
@@ -24,8 +24,17 @@ namespace graph {
 		}
 		const texture = new Float32Array(width * 2 * net.layers.length);
 
+		const presenceTextureWidth = Math.ceil(width / 8);
+		const presenceTexture = new Int8Array(presenceTextureWidth * net.layers.length);
+		const setPresence = (layer: number, index: number) => {
+			const start = Math.floor(index / 8);
+			const value = 1 << (index - start * 8);
+			presenceTexture[layer * presenceTextureWidth + start] = presenceTexture[layer * presenceTextureWidth + start] | value;
+		}
+
 		let textureOffset = 0;
-		for (const layer of net.layers) {
+		for (let j = 0; j < net.layers.length; j++) {
+			const layer = net.layers[j];
 			const nodeMap: Array<number> = []; //maps node id to its index in node array
 			const colors = new Float32Array(layer.nodes.length * 3);
 			const positions = new Float32Array(layer.nodes.length * 2);
@@ -48,6 +57,8 @@ namespace graph {
 
 				texture[textureOffset + node * 2] = positions[i * 2];
 				texture[textureOffset + node * 2 + 1] = positions[i * 2 + 1];
+
+				setPresence(j, node);
 			}
 
 			for (let i = 0; i < layer.edges.length; i++) {
@@ -60,6 +71,6 @@ namespace graph {
 			shapes.push(new graphics.Shape(indices, colors, positions));
 		}
 
-		return [shapes, graphics.Texture.makePositionTexture(width, net.layers.length, texture)];
+		return [shapes, graphics.Texture.makePositionTexture(width, net.layers.length, texture), graphics.Texture.makeBoolTexture(presenceTextureWidth, net.layers.length, presenceTexture)];
 	};
 }

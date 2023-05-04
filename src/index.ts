@@ -14,6 +14,7 @@ namespace dynnoslice {
 	let network: graph.Network;
 	let shapes: Array<graphics.Shape> = [];
 	let positionTexture: graphics.Texture = null;
+	let presenceTexture: graphics.Texture = null;
 	let temp: graphics.Texture;
 
 	let fb0: graphics.Framebuffer;
@@ -30,7 +31,9 @@ namespace dynnoslice {
 			shader.setInt("posTex", 0);
 			shader.setInt("index", viewModel.sliderValue.index);
 			shader.setFloat("mult", viewModel.sliderValue.mult);
-			shader.drawShape(shapes[0]);
+			presenceTexture.bind(graphics.gl.TEXTURE1);
+			shader.setInt("presenceTex", 1);
+			shader.drawShape(shapes[viewModel.sliderValue.index]);
 		};
 
 		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
@@ -98,6 +101,9 @@ namespace dynnoslice {
 			if (positionTexture != null) {
 				positionTexture.dispose();
 			}
+			if (presenceTexture != null) {
+				presenceTexture.dispose();
+			}
 			if (fb0 != null) {
 				fb0.dispose();
 			}
@@ -105,7 +111,7 @@ namespace dynnoslice {
 				fb1.dispose();
 			}
 
-			[shapes, positionTexture] = graph.toShapes(network);
+			[shapes, positionTexture, presenceTexture] = graph.toShapes(network);
 
 			fb0 = new graphics.Framebuffer(positionTexture.id, positionTexture.width, positionTexture.height);
 			temp = graphics.Texture.makePositionTexture(positionTexture.width, positionTexture.height, new Float32Array(positionTexture.width * positionTexture.height * 2));
