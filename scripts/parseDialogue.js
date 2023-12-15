@@ -8,7 +8,7 @@ const path = require("path");
 interface IntermediateEdge{
 	from: number;
 	to: number;
-	intervals: Array<number>;
+	chapters: Array<number>;
 }
 */
 
@@ -90,14 +90,14 @@ fs.readdir("test data/dialogues").then((fileNames) => {
 					edge = {
 						from: speakerIds[0],
 						to: speakerIds[1],
-						intervals: []
+						chapters: []
 					};
 					edges.set(edgeId, edge);
 				}
 
-				//update edge intervals if necessary
-				if (edge.intervals[edge.intervals.length - 1] != chapterNum) {
-					edge.intervals.push(chapterNum);
+				//update edge chapters if necessary
+				if (edge.chapters[edge.chapters.length - 1] != chapterNum) {
+					edge.chapters.push(chapterNum);
 				}
 			}
 		}
@@ -112,22 +112,26 @@ fs.readdir("test data/dialogues").then((fileNames) => {
 			result.nodes[nodeId] = node;
 		}
 
+		//split edge into intervals
 		for (const edge of edges.values()) {
-			result.edges.push(edge);
+			let prevChapter = edge.chapters[0];
+			const intervals = [];
+			for (let i = 1; i < edge.chapters.length; i++) {
+				//if chapter numbers are not consecutive, the dialogue doesn't appear between them
+				if (edge.chapters[i] != edge.chapters[i - 1] + 1) {
+					intervals.push([prevChapter, edge.chapters[i - 1] + 1]);
+					prevChapter = edge.chapters[i];
+				}
+			}
+
+			result.edges.push({
+				from: edge.from,
+				to: edge.to,
+				intervals
+			});
 		}
 
 		//stringify and save to file
 		fs.writeFile("test data/dialogues.json", JSON.stringify(result, undefined, "\t"));
-
-		//split every edge into 
-		/*for (const edge of edges.values()) {
-			//console.log(result.nodes[edge.from], result.nodes[edge.to], edge.intervals);
-			let start = edge.intervals[0];
-
-			//INFO: it might not be necessary
-			for (var i = 1; i < edge.intervals.length; i++) {
-				const interval = edge.intervals[i];
-			}
-		}*/
 	});
 });
