@@ -1,21 +1,110 @@
 namespace graph {
+
+	type Interval = [number, number];
+
 	export interface Network {
-		layers: Array<Layer>;
+		nodes: Array<Node>;
+		edges: Array<Edge>;
 	}
 
-	export interface Layer {
-		timestamp: number;
-		nodes: Array<number>;
-		edges: Array<Edge>;
+	export interface Node {
+		label: string;
+		intervals: Array<Interval>;
 	}
 
 	export interface Edge {
 		from: number;
 		to: number;
-		label: string;
+		label?: string;
+		intervals: Array<Interval>;
 	}
 
-	export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.Texture, graphics.Texture] => {
+	interface Color {
+		r: number;
+		g: number;
+		b: number;
+	}
+
+	class ExtNetwork implements Network {
+		public nodes: Array<Node>;
+		public edges: Array<Edge>;
+		//TODO: add node trajectory data
+
+		constructor(network: Network) {
+			this.nodes = network.nodes;
+			this.edges = network.edges;
+			//TODO: generate interval trees for nodes and edges
+		}
+
+		/**
+		 * Updates node trajectory positions using data from texture
+		 * @param buf data from positions texture
+		 */
+		public updatePositions(buf: Float32Array) {
+			//TODO: implement
+		}
+
+		/**
+		 * Generates a slice to be visualized
+		 * @param time moment at which the timeslice occurs
+		 */
+		public toSlice(time: number) {
+			//TODO: implement
+		}
+
+		/**
+		 * Generate positions 
+		 * @param timeStep time step at which new trajectory points are created
+		 * @returns [buffer, width, height]
+		 */
+		public genPositionsBuffer(timeStep: number): [Float32Array, number, number] {
+			//data is stored as R: x, G: y, B: time
+			//row Y stores trajectories of node Y
+			const trajectories: Array<Array<Color>> = [];
+
+			let width = 0;
+			for (const node of this.nodes) {
+				const trajectory: Array<Color> = [];
+				const nodeX = Math.random();
+				const nodeY = Math.random();
+
+				for (const interval of node.intervals) {
+					//subdivide each interval by time step
+					let currentTime = interval[0];
+
+					while (currentTime < interval[1]) {
+						trajectory.push({ r: nodeX, g: nodeY, b: currentTime });
+						currentTime += timeStep;
+					}
+
+					//interval end is skipped by loop, add it here
+					trajectory.push({ r: nodeX, g: nodeY, b: currentTime });
+				}
+
+				trajectories.push(trajectory);
+				//calculate new width, width is multiplied by 3 since every positions takes up 3 buffer elements
+				width = Math.max(width, trajectory.length);
+			}
+
+			//write the arrays into the buffer
+			const buffer = new Float32Array(3 * width * this.nodes.length);
+			let rowStart = 0;
+			for (const trajectory of trajectories) {
+				let pos = 0;
+				for (const point of trajectory) {
+					buffer[rowStart + pos++] = point.r;
+					buffer[rowStart + pos++] = point.g;
+					buffer[rowStart + pos++] = point.b;
+				}
+
+				rowStart += 3 * width;
+			}
+
+			return [buffer, width, this.nodes.length];
+		}
+	}
+
+	/*export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.Texture, graphics.Texture] => {
 		const shapes: Array<graphics.Shape> = [];
 
 		let width = 0;
@@ -72,5 +161,5 @@ namespace graph {
 		}
 
 		return [shapes, graphics.Texture.makePositionTexture(width, net.layers.length, texture), graphics.Texture.makeBoolTexture(presenceTextureWidth, net.layers.length, presenceTexture)];
-	};
+	};*/
 }
