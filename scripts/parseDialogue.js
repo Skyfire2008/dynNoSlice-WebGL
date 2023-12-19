@@ -8,6 +8,14 @@ const path = require("path");
 interface IntermediateEdge{
 	from: number;
 	to: number;
+	chapters: Set<number>;
+}
+*/
+
+/*
+interface IntermediateNode{
+	id: number;
+	label: string;
 	chapters: Array<number>;
 }
 */
@@ -32,6 +40,28 @@ const getEdgeId = (a, b) => {
 	return triNum + min;
 };
 
+/**
+ * Converts an array of chapters where a dialogue/character appears to array of intervals
+ * @param chapters 
+ */
+const chaptersToIntervals = (chapters) => {
+	const intervals = [];
+
+	let prevChapter = chapters[0];
+	for (let i = 1; i < chapters.length; i++) {
+		//if chapter numbers are not consecutive, doesn't appear between them
+		if (chapters[i] != chapters[i - 1] + 1) {
+			intervals.push([prevChapter, chapters[i - 1] + 1]);
+			prevChapter = chapters[i];
+		}
+	}
+
+	//last interval was skipped, add it
+	intervals.push([prevChapter, chapters[chapters.length - 1] + 1]);
+
+	return intervals;
+};
+
 fs.readdir("test data/dialogues").then((fileNames) => {
 	const chapterPromises = [];
 	const chapters = [];
@@ -54,7 +84,7 @@ fs.readdir("test data/dialogues").then((fileNames) => {
 
 	Promise.all(chapterPromises).then(() => {
 
-		const nodes = new Map(); // string -> number
+		const nodes = new Map(); // maps speaker names to speaker objects, string -> IntermediateNode
 		let nodeNum = 0;
 		const edges = new Map(); // number -> IntermediateEdge
 
@@ -72,24 +102,34 @@ fs.readdir("test data/dialogues").then((fileNames) => {
 				}
 
 				//separate speakers participating in the dialogue
-				const speakers = dialogue.split("\t");
-				const speakerIds = [nodes.get(speakers[0]), nodes.get(speakers[1])];
+				const speakerNames = dialogue.split("\t");
+				const speakers = [nodes.get(speakerNames[0]), nodes.get(speakerNames[1])];
 
-				//add new nodes if necessary
 				for (let i = 0; i < 2; i++) {
-					if (speakerIds[i] == null) {
-						speakerIds[i] = nodeNum++;
-						nodes.set(speakers[i], speakerIds[i]);
+
+					//if node doesn't exist, create it
+					if (speakers[i] == null) {
+						speakers[i] = {
+							id: nodeNum++,
+							label: speakerNames[i],
+							chapters: [chapterNum]
+						};
+						nodes.set(speakerNames[i], speakers[i]);
+					} else {
+						//otherwise just update node's chapters
+						if (speakers[i].chapters[speakers[i].chapters.length - 1] != chapterNum) {
+							speakers[i].chapters.push(chapterNum);
+						}
 					}
 				}
 
 				//add new edge if necessary
-				const edgeId = getEdgeId(speakerIds[0], speakerIds[1]);
+				const edgeId = getEdgeId(speakers[0].id, speakers[1].id);
 				let edge = edges.get(edgeId);
 				if (edge == null) {
 					edge = {
-						from: speakerIds[0],
-						to: speakerIds[1],
+						from: speakers[0].id,
+						to: speakers[1].id,
 						chapters: []
 					};
 					edges.set(edgeId, edge);
@@ -108,30 +148,33 @@ fs.readdir("test data/dialogues").then((fileNames) => {
 		};
 
 		//convert maps to arrays
-		for (const [node, nodeId] of nodes) {
-			result.nodes[nodeId] = node;
+		for (const node of nodes.values()) {
+			result.nodes[node.id] = {
+				label: node.label,
+				intervals: chaptersToIntervals(node.chapters)
+			}
 		}
 
 		//split edge into intervals
 		for (const edge of edges.values()) {
-			let prevChapter = edge.chapters[0];
-			const intervals = [];
-			for (let i = 1; i < edge.chapters.length; i++) {
-				//if chapter numbers are not consecutive, the dialogue doesn't appear between them
-				if (edge.chapters[i] != edge.chapters[i - 1] + 1) {
-					intervals.push([prevChapter, edge.chapters[i - 1] + 1]);
-					prevChapter = edge.chapters[i];
-				}
-			}
-
 			result.edges.push({
 				from: edge.from,
 				to: edge.to,
-				intervals
+				intervals: chaptersToIntervals(edge.chapters)
 			});
 		}
 
 		//stringify and save to file
-		fs.writeFile("test data/dialogues.json", JSON.stringify(result, undefined, "\t"));
+		function replacer(key, value) {
+			if (value instanceof Array && typeof value[0] == "number") {
+				return `[${value[0]}, ${value[1]}]`; // place interval arrays on the same line
+			} else {
+				return value;
+			}
+		}
+
+		//JSON.stringify wraps interval arrays into "", remove them
+		const jsonText = JSON.stringify(result, replacer, "\t").replaceAll("\"[", "[").replaceAll("]\"", "]");
+		fs.writeFile("test data/dialogues.json", jsonText);
 	});
 });
