@@ -25,16 +25,42 @@ namespace graph {
 		b: number;
 	}
 
-	class ExtNetwork implements Network {
+	export class ExtNetwork implements Network {
 		public nodes: Array<Node>;
 		public edges: Array<Edge>;
+		public startTime: number;
+		public endTime: number;
 		//TODO: add node trajectory data
 
 		constructor(network: Network) {
 			this.nodes = network.nodes;
 			this.edges = network.edges;
+
+			this.startTime = Number.POSITIVE_INFINITY;
+			this.endTime = Number.NEGATIVE_INFINITY;
+			for (const edge of network.edges) {
+				//assume that all intervals are in order
+				this.startTime = Math.min(this.startTime, edge.intervals[0][0]);
+				this.endTime = Math.max(this.endTime, edge.intervals[edge.intervals.length - 1][1]);
+			}
+
 			//TODO: generate interval trees for nodes and edges
 		}
+
+		//TODO: move to a separate module
+		public static getEdgeId(a: number, b: number) {
+			let min, max;
+			if (a < b) {
+				min = a;
+				max = b;
+			} else {
+				min = b;
+				max = a;
+			}
+
+			const triNum = max * (max + 1) / 2;
+			return triNum + min;
+		};
 
 		/**
 		 * Updates node trajectory positions using data from texture
@@ -57,7 +83,7 @@ namespace graph {
 		 * @param timeStep time step at which new trajectory points are created
 		 * @returns [buffer, width, height]
 		 */
-		public genPositionsBuffer(timeStep: number): [Float32Array, number, number] {
+		private genPositionsBuffer(timeStep: number): [Float32Array, number, number] {
 			//data is stored as R: x, G: y, B: time
 			//row Y stores trajectories of node Y
 			const trajectories: Array<Array<Color>> = [];
@@ -101,6 +127,64 @@ namespace graph {
 			}
 
 			return [buffer, width, this.nodes.length];
+		}
+
+		private genIntervalsBuffer(): [Float32Array, Map<number, number>] {
+			//if every row corresponds to a single edge, it will likely result in a texture that's too big for the GPU
+			//lay out all intervals continuously and store the edges' indices
+
+			const indMap = new Map<number, number>(); //maps edge id to its index in buffer
+
+			//calculate the buffer length first
+			let length = 0;
+			for (const edge of this.edges) {
+				const id = ExtNetwork.getEdgeId(edge.from, edge.to);
+				indMap.set(id, length);
+				length += 2 + edge.intervals.length * 2;
+			}
+
+			//now write the data
+			const buffer = new Float32Array(length);
+			let pos = 0;
+			for (const edge of this.edges) {
+				for (const interval of edge.intervals) {
+					buffer[pos++] = interval[0];
+					buffer[pos++] = interval[1];
+				}
+
+				buffer[pos++] = 0;
+				buffer[pos++] = 0; //[0, 0] denotes the end of edge
+			}
+
+			return [buffer, indMap];
+		}
+
+		private genAdjacenciesBuffer(): Uint16Array {
+
+			//first calculate the adjacency list
+			const adjLists: Array<Array<number>> = [];
+
+			for (const edge of this.edges) {
+				let fromArray = adjLists[edge.from];
+				if (fromArray == null) {
+					fromArray = [];
+					adjLists[edge.from] = fromArray;
+				}
+				fromArray.push(edge.to);
+
+				let toArray = adjLists[edge.to];
+				if (toArray == null) {
+					toArray = [];
+					adjLists[edge.to] = toArray;
+				}
+				toArray.push(edge.from);
+			}
+
+			//TODO: there's a non-zero chance that adjacency texture elements will also have to refer to interval texture
+			const width = adjLists.reduce((prev, cur) => Math.max(prev, cur.length), 0);
+
+
+			return null;
 		}
 	}
 
