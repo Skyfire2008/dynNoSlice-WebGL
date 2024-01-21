@@ -11,7 +11,7 @@ namespace dynnoslice {
 	let mainCanvas: HTMLCanvasElement;
 	let ctx: WebGL2RenderingContext;
 	let shader: graphics.Shader;
-	let network: graph.Network;
+	let network: graph.ExtNetwork;
 	let shapes: Array<graphics.Shape> = [];
 	let positionTexture: graphics.Texture = null;
 	let presenceTexture: graphics.Texture = null;
@@ -90,14 +90,14 @@ namespace dynnoslice {
 			}
 		};
 		viewModel.graphFile.subscribe((file) => {
-			network = JSON.parse(file.contents);
+			network = new graph.ExtNetwork(JSON.parse(file.contents));
 
-			viewModel.timestamps(network.layers.map((layer) => layer.timestamp));
+			//TODO: put network buffers into textures
+			const [posBuf, posDims] = network.genPositionsBuffer(1);
+			const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
+			const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
 
 			//cleanup old GPU data
-			for (const shape of shapes) {
-				shape.dispose();
-			}
 			if (positionTexture != null) {
 				positionTexture.dispose();
 			}
@@ -110,8 +110,6 @@ namespace dynnoslice {
 			if (fb1 != null) {
 				fb1.dispose();
 			}
-
-			[shapes, positionTexture, presenceTexture] = graph.toShapes(network);
 
 			fb0 = new graphics.Framebuffer(positionTexture.id, positionTexture.width, positionTexture.height);
 			temp = graphics.Texture.makePositionTexture(positionTexture.width, positionTexture.height, new Float32Array(positionTexture.width * positionTexture.height * 2));

@@ -25,11 +25,27 @@ namespace graph {
 		b: number;
 	}
 
+	//TODO: move to a separate module
+	const getEdgeId = (a: number, b: number) => {
+		let min, max;
+		if (a < b) {
+			min = a;
+			max = b;
+		} else {
+			min = b;
+			max = a;
+		}
+
+		const triNum = max * (max + 1) / 2;
+		return triNum + min;
+	};
+
 	export class ExtNetwork implements Network {
 		public nodes: Array<Node>;
 		public edges: Array<Edge>;
 		public startTime: number;
 		public endTime: number;
+
 		//TODO: add node trajectory data
 
 		constructor(network: Network) {
@@ -46,21 +62,6 @@ namespace graph {
 
 			//TODO: generate interval trees for nodes and edges
 		}
-
-		//TODO: move to a separate module
-		public static getEdgeId(a: number, b: number) {
-			let min, max;
-			if (a < b) {
-				min = a;
-				max = b;
-			} else {
-				min = b;
-				max = a;
-			}
-
-			const triNum = max * (max + 1) / 2;
-			return triNum + min;
-		};
 
 		/**
 		 * Updates node trajectory positions using data from texture
@@ -79,11 +80,11 @@ namespace graph {
 		}
 
 		/**
-		 * Generate positions 
+		 * Generates positions buffer
 		 * @param timeStep time step at which new trajectory points are created
-		 * @returns [buffer, width, height]
+		 * @returns [buffer, dimensions]
 		 */
-		private genPositionsBuffer(timeStep: number): [Float32Array, number, number] {
+		public genPositionsBuffer(timeStep: number): [Float32Array, math.Dims] {
 			//data is stored as R: x, G: y, B: time
 			//row Y stores trajectories of node Y
 			const trajectories: Array<Array<Color>> = [];
@@ -126,40 +127,45 @@ namespace graph {
 				rowStart += 3 * width;
 			}
 
-			return [buffer, width, this.nodes.length];
+			return [buffer, { width, height: this.nodes.length }];
 		}
 
-		private genIntervalsBuffer(): [Float32Array, Map<number, number>] {
+
+		/**
+		 * Generates a buffer of intervals for every edge
+		 * @returns interval buffer, map of 
+		 */
+		public genIntervalsBuffer(): [Float32Array, Map<number, number>] {
 			//if every row corresponds to a single edge, it will likely result in a texture that's too big for the GPU
 			//lay out all intervals continuously and store the edges' indices
 
 			const indMap = new Map<number, number>(); //maps edge id to its index in buffer
+			const buffer: Array<number> = [];
 
-			//calculate the buffer length first
-			let length = 0;
 			for (const edge of this.edges) {
-				const id = ExtNetwork.getEdgeId(edge.from, edge.to);
-				indMap.set(id, length);
-				length += 2 + edge.intervals.length * 2;
-			}
 
-			//now write the data
-			const buffer = new Float32Array(length);
-			let pos = 0;
-			for (const edge of this.edges) {
+				const id = getEdgeId(edge.from, edge.to);
+				indMap.set(id, buffer.length / 2);
+
 				for (const interval of edge.intervals) {
-					buffer[pos++] = interval[0];
-					buffer[pos++] = interval[1];
+					buffer.push(interval[0]);
+					buffer.push(interval[1]);
 				}
 
-				buffer[pos++] = 0;
-				buffer[pos++] = 0; //[0, 0] denotes the end of edge
+				//push two zeros to denote end of edge's intervals
+				//two zeros, since when represented as texture, every pixel will contain two values
+				buffer.push(0, 0);
 			}
 
-			return [buffer, indMap];
+			return [new Float32Array(buffer), indMap];
 		}
 
-		private genAdjacenciesBuffer(): Uint16Array {
+		/**
+		 * Generates a buffer of eges' indices
+		 * @param edgeIndexMap map edges' ids to starting positions of their intervals in intervals buffer(returned by genIntervalsBuffer)
+		 * @returns 
+		 */
+		public genAdjacenciesBuffer(edgeIndexMap: Map<number, number>): [Uint16Array, math.Dims] {
 
 			//first calculate the adjacency list
 			const adjLists: Array<Array<number>> = [];
@@ -180,70 +186,25 @@ namespace graph {
 				toArray.push(edge.from);
 			}
 
-			//TODO: there's a non-zero chance that adjacency texture elements will also have to refer to interval texture
-			const width = adjLists.reduce((prev, cur) => Math.max(prev, cur.length), 0);
+			const width = adjLists.reduce((prev, cur) => Math.max(prev, cur.length), 0) + 1;
 
+			//now write them into the buffer
+			const buffer = new Uint16Array(2 * width * this.nodes.length);
+			for (let nodeId = 0; nodeId < this.nodes.length; nodeId++) {
+				let pos = nodeId * width * 2
+				const adjacencies = adjLists[nodeId];
+				buffer[pos] = adjacencies.length; //write the length of the row(amount of adjacent nodes)
+				pos += 2;
 
-			return null;
+				for (const adjNodeId of adjacencies) {
+					const edgeIndex = edgeIndexMap.get(getEdgeId(nodeId, adjNodeId));
+
+					buffer[pos++] = adjNodeId;
+					buffer[pos++] = edgeIndex;
+				}
+			}
+
+			return [buffer, { width, height: this.nodes.length }];
 		}
 	}
-
-	/*export const toShapes = (net: Network): [Array<graphics.Shape>, graphics.Texture, graphics.Texture] => {
-		const shapes: Array<graphics.Shape> = [];
-
-		let width = 0;
-		for (const layer of net.layers) {
-			width = Math.max(width, layer.nodes.length);
-		}
-		const texture = new Float32Array(width * 2 * net.layers.length);
-
-		const presenceTextureWidth = Math.ceil(width / 8);
-		const presenceTexture = new Int8Array(presenceTextureWidth * net.layers.length);
-		const setPresence = (layer: number, index: number) => {
-			const start = Math.floor(index / 8);
-			const value = 1 << (index - start * 8);
-			presenceTexture[layer * presenceTextureWidth + start] = presenceTexture[layer * presenceTextureWidth + start] | value;
-		}
-
-		let textureOffset = 0;
-		for (let j = 0; j < net.layers.length; j++) {
-			const layer = net.layers[j];
-			const nodeMap: Array<number> = []; //maps node id to its index in node array
-			const colors = new Float32Array(layer.nodes.length * 3);
-			const positions = new Float32Array(layer.nodes.length * 2);
-			const indices = new Uint16Array(layer.edges.length * 2);
-
-			for (let i = 0; i < layer.nodes.length; i++) {
-				const node = layer.nodes[i];
-				nodeMap[node] = i;
-				nodeMap.push(node);
-
-				const color = [0, 0, 0];
-				color[node % 3] = 1;
-
-				colors[i * 3] = color[0];
-				colors[i * 3 + 1] = color[1];
-				colors[i * 3 + 2] = color[2];
-
-				positions[i * 2] = Math.random() * 2 - 1;
-				positions[i * 2 + 1] = Math.random() * 2 - 1;
-
-				texture[textureOffset + node * 2] = positions[i * 2];
-				texture[textureOffset + node * 2 + 1] = positions[i * 2 + 1];
-
-				setPresence(j, node);
-			}
-
-			for (let i = 0; i < layer.edges.length; i++) {
-				const edge = layer.edges[i];
-				indices[i * 2] = nodeMap[edge.from];
-				indices[i * 2 + 1] = nodeMap[edge.to];
-			}
-
-			textureOffset += width * 2;
-			shapes.push(new graphics.Shape(indices, colors, positions));
-		}
-
-		return [shapes, graphics.Texture.makePositionTexture(width, net.layers.length, texture), graphics.Texture.makeBoolTexture(presenceTextureWidth, net.layers.length, presenceTexture)];
-	};*/
 }
