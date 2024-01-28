@@ -133,7 +133,7 @@ namespace graph {
 
 		/**
 		 * Generates a buffer of intervals for every edge
-		 * @returns interval buffer, map of 
+		 * @returns interval buffer, map of edge ids to their positions in buffer
 		 */
 		public genIntervalsBuffer(): [Float32Array, Map<number, number>] {
 			//if every row corresponds to a single edge, it will likely result in a texture that's too big for the GPU
@@ -157,6 +157,7 @@ namespace graph {
 				buffer.push(0, 0);
 			}
 
+			//TODO: calculate square root of length, turn the texture into a square with this side length, pad with zeroes
 			return [new Float32Array(buffer), indMap];
 		}
 

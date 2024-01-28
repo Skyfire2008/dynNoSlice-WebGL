@@ -9,6 +9,7 @@ namespace dynnoslice {
 	}
 
 	let mainCanvas: HTMLCanvasElement;
+	let glCanvas: HTMLCanvasElement;
 	let ctx: WebGL2RenderingContext;
 	let shader: graphics.Shader;
 	let network: graph.ExtNetwork;
@@ -36,8 +37,8 @@ namespace dynnoslice {
 			shader.drawShape(shapes[viewModel.sliderValue.index]);
 		};
 
-		mainCanvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
-		ctx = mainCanvas.getContext("webgl2");
+		glCanvas = <HTMLCanvasElement>document.getElementById("glCanvas");
+		ctx = glCanvas.getContext("webgl2");
 		const renderToFloatExt = ctx.getExtension("EXT_color_buffer_float");
 		console.log(renderToFloatExt);
 		ctx.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -96,6 +97,10 @@ namespace dynnoslice {
 			const [posBuf, posDims] = network.genPositionsBuffer(1);
 			const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
 			const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
+
+			graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
+			graphics.Texture.makeIntervalsTexture(1, intervalsBuf.length / 2, intervalsBuf);
+			graphics.Texture.makeAdjacenciesTexture(adjDims.width, adjDims.height, adjacencyBuf);
 
 			//cleanup old GPU data
 			if (positionTexture != null) {
