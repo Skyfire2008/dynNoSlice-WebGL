@@ -31,26 +31,20 @@ void main(){
 	gl_Position = vec4(mix(texPos0, texPos1, mult), 0.0, 1.0);
 	color = vec4(colorIn*float(present), 1.0);
 }`;
-	export const testFramebufferFrag = `#version 300 es
+	export const drawQuadFrag = `#version 300 es
 precision highp float;
 
 in vec2 texCoords;
 
-out vec2 fragColor;
+out vec4 fragColor;
 
-uniform lowp isampler2D presenceTex;
-uniform sampler2D posTex;
+uniform sampler2D tex;
 
 void main(){
-	vec2 disp = vec2(0.0, 1.0/float(textureSize(posTex, 0).y));
-	vec2 pos = texture(posTex, texCoords).rg;
-	
-	vec2 centre = (pos + texture(posTex, texCoords+disp).rg + texture(posTex, texCoords-disp).rg)/3.0;
-
-	fragColor = mix(pos, centre, 0.9);
+	fragColor = texture(tex, texCoords);
 }
 `;
-	export const testFramebufferVert = `#version 300 es
+	export const drawQuadVert = `#version 300 es
 precision highp float;
 
 layout(location = 0) in vec2 posIn;
@@ -63,6 +57,19 @@ uniform sampler2D posTex;
 void main(){
 	texCoords = uvIn;
 	gl_Position = vec4(posIn, 0.0, 1.0);
+}
+`;
+	export const updatePositionsFrag = `#version 300 es
+precision highp float;
+
+in vec2 texCoords;
+
+out vec4 fragColor;
+
+uniform sampler2D posTex;
+
+void main(){
+	fragColor = texture(posTex, texCoords).argb;
 }
 `;
 }

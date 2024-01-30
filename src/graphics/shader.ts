@@ -12,6 +12,20 @@ namespace graphics {
 			Shader.quad = new Quad();
 		}
 
+		public static setViewportDims(width: number, height: number) {
+			gl.viewport(0, 0, width, height);
+		}
+
+		public static unbindFramebuffer() {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		}
+
+		public static readPixels(width: number, height: number, buf: ArrayBufferView) {
+			const format = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_FORMAT);
+			const type = gl.getParameter(gl.IMPLEMENTATION_COLOR_READ_TYPE);
+			gl.readPixels(0, 0, width, height, format, type, buf);
+		}
+
 		public static clear() {
 			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		}
@@ -75,8 +89,10 @@ namespace graphics {
 			gl.bindVertexArray(null);
 		}
 
-		public drawQuad(width: number, height: number) {
-			gl.viewport(0, 0, width, height);
+		/**
+		 * Draws a quad taking up the entire viewport
+		 */
+		public drawQuad() {
 			gl.bindVertexArray(Shader.quad.vao);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			gl.bindVertexArray(null);

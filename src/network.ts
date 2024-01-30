@@ -85,7 +85,7 @@ namespace graph {
 		 * @returns [buffer, dimensions]
 		 */
 		public genPositionsBuffer(timeStep: number): [Float32Array, math.Dims] {
-			//data is stored as R: x, G: y, B: time
+			//data is stored as R: x, G: y, B: time, A: empty(but necessary, cause only RGBA32F texture can be bound to a framebuffer)
 			//row Y stores trajectories of node Y
 			const trajectories: Array<Array<Color>> = [];
 
@@ -114,7 +114,7 @@ namespace graph {
 			}
 
 			//write the arrays into the buffer
-			const buffer = new Float32Array(3 * width * this.nodes.length);
+			const buffer = new Float32Array(4 * width * this.nodes.length);
 			let rowStart = 0;
 			for (const trajectory of trajectories) {
 				let pos = 0;
@@ -122,9 +122,10 @@ namespace graph {
 					buffer[rowStart + pos++] = point.r;
 					buffer[rowStart + pos++] = point.g;
 					buffer[rowStart + pos++] = point.b;
+					buffer[rowStart + pos++] = 0;
 				}
 
-				rowStart += 3 * width;
+				rowStart += 4 * width;
 			}
 
 			return [buffer, { width, height: this.nodes.length }];

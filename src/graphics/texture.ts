@@ -19,7 +19,12 @@ namespace graphics {
 			let format: number = null;
 			let type: number = null;
 			switch (internalFormat) {
-				case gl.RGB32F: //positions: 3 channels, 4 bytes each, float
+				case gl.RGBA32F: //positions: 3 channels, alpha is not used, 4 bytes each, float
+					format = gl.RGBA;
+					type = gl.FLOAT;
+					break;
+				case gl.RGB32F:
+					console.log("RGB32F is not color renderable, do not use for positions");
 					format = gl.RGB;
 					type = gl.FLOAT;
 					break;
@@ -66,7 +71,7 @@ namespace graphics {
 		 * @returns texture
 		 */
 		public static makePositionTexture(width: number, height: number, data: Float32Array) {
-			return Texture.makeTexture(width, height, data, gl.RGB32F);
+			return Texture.makeTexture(width, height, data, gl.RGBA32F);
 		}
 
 		private constructor(id: WebGLTexture, width: number, height: number, internalFormat: number) {

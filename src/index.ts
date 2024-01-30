@@ -9,34 +9,30 @@ namespace dynnoslice {
 	}
 
 	let mainCanvas: HTMLCanvasElement;
+
+
+	let network: graph.ExtNetwork;
+
 	let glCanvas: HTMLCanvasElement;
 	let ctx: WebGL2RenderingContext;
-	let shader: graphics.Shader;
-	let network: graph.ExtNetwork;
-	let shapes: Array<graphics.Shape> = [];
-	let positionTexture: graphics.Texture = null;
-	let presenceTexture: graphics.Texture = null;
-	let temp: graphics.Texture;
+	let posShader: graphics.Shader; //updates trajectories
+	let quadShader: graphics.Shader; //draws a textured quad
+	let intervalsTexture: graphics.Texture = null;
+	let adjacenciesTexture: graphics.Texture = null;
 
-	let fb0: graphics.Framebuffer;
-	let fb1: graphics.Framebuffer;
-	let flip = true;
+	let positionTextures: [graphics.Texture, graphics.Texture] = [null, null];
+	let positionFbs: [graphics.Framebuffer, graphics.Framebuffer] = [null, null];
+	let pingPongIndex = 0; //source
 
 	window.addEventListener("load", () => {
 
+		/**
+		 * Redraw the graph visualization
+		 */
 		const redraw = () => {
-			shader.use();
-			graphics.Shader.clear();
-			let srcTex = flip ? temp : positionTexture;
-			srcTex.bind(graphics.gl.TEXTURE0);
-			shader.setInt("posTex", 0);
-			shader.setInt("index", viewModel.sliderValue.index);
-			shader.setFloat("mult", viewModel.sliderValue.mult);
-			presenceTexture.bind(graphics.gl.TEXTURE1);
-			shader.setInt("presenceTex", 1);
-			shader.drawShape(shapes[viewModel.sliderValue.index]);
 		};
 
+		//setup gl context
 		glCanvas = <HTMLCanvasElement>document.getElementById("glCanvas");
 		ctx = glCanvas.getContext("webgl2");
 		const renderToFloatExt = ctx.getExtension("EXT_color_buffer_float");
@@ -44,45 +40,44 @@ namespace dynnoslice {
 		ctx.clearColor(1.0, 1.0, 1.0, 1.0);
 
 		graphics.Shader.init(ctx);
-		shader = new graphics.Shader(shaders.drawGraphVert, shaders.drawGraphFrag);
-
-		const foo = new graphics.Shader(shaders.testFramebufferVert, shaders.testFramebufferFrag);
-		//foo.use();
-		//foo.drawQuad(1280, 720);
+		posShader = new graphics.Shader(shaders.drawQuadVert, shaders.updatePositionsFrag);
+		quadShader = new graphics.Shader(shaders.drawQuadVert, shaders.drawQuadFrag);
+		quadShader.use();
 
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null),
 			timestamps: ko.observable([]),
 			step: () => {
-				let boundFb = flip ? fb1 : fb0;
-				let tex = flip ? positionTexture : temp;
-				let srcTex = flip ? temp : positionTexture;
+				//use ping pong index to et correct framebuffer and texture
+				let boundFb = positionFbs[1 - pingPongIndex];
+				let tex = positionTextures[pingPongIndex];
 
+				//render into framebuffer
 				boundFb.bind();
 				graphics.Shader.clear();
-				foo.use();
+				posShader.use();
 				tex.bind(graphics.gl.TEXTURE0);
-				foo.setInt("posTex", 0);
-				foo.drawQuad(positionTexture.width, positionTexture.height);
-				graphics.gl.bindFramebuffer(graphics.gl.FRAMEBUFFER, null);
+				posShader.setInt("posTex", 0);
+				posShader.drawQuad();
+				pingPongIndex = 1 - pingPongIndex;
 
-				graphics.gl.viewport(0, 0, 1280, 720);
-				redraw();
-				/*shader.use();
-				srcTex.bind(graphics.gl.TEXTURE0);
-				shader.setInt("posTex", 0);
-				shader.drawShape(shapes[0]);*/
+				//readPixels to get update positions texture
+				const buf = new Float32Array(tex.width * tex.height * 4);
+				graphics.Shader.readPixels(tex.width, tex.height, buf);
+				console.log(buf);
 
-				/*foo.use();
-				srcTex.bind(graphics.gl.TEXTURE0);
-				foo.setInt("posTex", 0);
-				foo.drawQuad(positionTexture.width, positionTexture.height);*/
-
-				flip = !flip;
+				//draw the resulting texture
+				graphics.Shader.unbindFramebuffer();
+				tex = positionTextures[pingPongIndex];
+				graphics.Shader.clear();
+				quadShader.use();
+				tex.bind(graphics.gl.TEXTURE0);
+				quadShader.setInt("posTex", 0);
+				quadShader.drawQuad();
 			},
 			onSliderChange: (e) => {
-				Object.assign(viewModel.sliderValue, e);
-				redraw();
+				//Object.assign(viewModel.sliderValue, e);
+				//redraw();
 			},
 			sliderValue: {
 				time: 0,
@@ -93,38 +88,41 @@ namespace dynnoslice {
 		viewModel.graphFile.subscribe((file) => {
 			network = new graph.ExtNetwork(JSON.parse(file.contents));
 
-			//TODO: put network buffers into textures
+			//put network buffers into textures
 			const [posBuf, posDims] = network.genPositionsBuffer(1);
 			const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
 			const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
 
-			graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
-			graphics.Texture.makeIntervalsTexture(1, intervalsBuf.length / 2, intervalsBuf);
-			graphics.Texture.makeAdjacenciesTexture(adjDims.width, adjDims.height, adjacencyBuf);
-
 			//cleanup old GPU data
-			if (positionTexture != null) {
-				positionTexture.dispose();
+			for (let i = 0; i < 2; i++) {
+				if (positionTextures[i] != null) {
+					positionTextures[i].dispose();
+				}
+				if (positionFbs[i] != null) {
+					positionFbs[i].dispose();
+				}
 			}
-			if (presenceTexture != null) {
-				presenceTexture.dispose();
+			if (intervalsTexture != null) {
+				intervalsTexture.dispose();
 			}
-			if (fb0 != null) {
-				fb0.dispose();
-			}
-			if (fb1 != null) {
-				fb1.dispose();
+			if (adjacenciesTexture != null) {
+				adjacenciesTexture.dispose();
 			}
 
-			fb0 = new graphics.Framebuffer(positionTexture.id, positionTexture.width, positionTexture.height);
-			temp = graphics.Texture.makePositionTexture(positionTexture.width, positionTexture.height, new Float32Array(positionTexture.width * positionTexture.height * 2));
-			fb1 = new graphics.Framebuffer(temp.id, temp.width, temp.height);
-			flip = true;
+			//create new textures and framebuffers
+			positionTextures[0] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
+			positionTextures[1] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, new Float32Array(4 * posDims.width * posDims.height));
+			intervalsTexture = graphics.Texture.makeIntervalsTexture(1, intervalsBuf.length / 2, intervalsBuf);
+			adjacenciesTexture = graphics.Texture.makeAdjacenciesTexture(adjDims.width, adjDims.height, adjacencyBuf);
+			for (let i = 0; i < 2; i++) {
+				positionFbs[i] = new graphics.Framebuffer(positionTextures[i].id, posDims.width, posDims.height);
+			}
+			pingPongIndex = 0;
 
-			shader.use();
-			positionTexture.bind(graphics.gl.TEXTURE0);
-			shader.setInt("posTex", 0);
-			shader.drawShape(shapes[0]);
+			//change glCanvas dimensions to positions texture width and height
+			glCanvas.width = posDims.width;
+			glCanvas.height = posDims.height;
+			graphics.Shader.setViewportDims(posDims.width, posDims.height);
 		});
 
 		ko.applyBindings(viewModel);
