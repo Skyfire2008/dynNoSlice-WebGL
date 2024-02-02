@@ -71,7 +71,7 @@ namespace dynnoslice.ui {
 						viewModel.min(0);
 						viewModel.max(1);
 					}
-				})
+				});
 
 				return viewModel;
 			},

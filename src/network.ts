@@ -1,6 +1,6 @@
-namespace graph {
+namespace dynnoslice {
 
-	type Interval = [number, number];
+	export type Interval = [number, number];
 
 	export interface Network {
 		nodes: Array<Node>;
@@ -24,21 +24,6 @@ namespace graph {
 		g: number;
 		b: number;
 	}
-
-	//TODO: move to a separate module
-	const getEdgeId = (a: number, b: number) => {
-		let min, max;
-		if (a < b) {
-			min = a;
-			max = b;
-		} else {
-			min = b;
-			max = a;
-		}
-
-		const triNum = max * (max + 1) / 2;
-		return triNum + min;
-	};
 
 	export class ExtNetwork implements Network {
 		public nodes: Array<Node>;
@@ -68,7 +53,7 @@ namespace graph {
 		 * @param buf data from positions texture
 		 */
 		public updatePositions(buf: Float32Array) {
-			//TODO: implement
+			//INFO: probably not necessary, graph-svg component should handle positions
 		}
 
 		/**
@@ -145,7 +130,7 @@ namespace graph {
 
 			for (const edge of this.edges) {
 
-				const id = getEdgeId(edge.from, edge.to);
+				const id = util.getEdgeId(edge.from, edge.to);
 				indMap.set(id, buffer.length / 2);
 
 				for (const interval of edge.intervals) {
@@ -199,7 +184,7 @@ namespace graph {
 				pos += 2;
 
 				for (const adjNodeId of adjacencies) {
-					const edgeIndex = edgeIndexMap.get(getEdgeId(nodeId, adjNodeId));
+					const edgeIndex = edgeIndexMap.get(util.getEdgeId(nodeId, adjNodeId));
 
 					buffer[pos++] = adjNodeId;
 					buffer[pos++] = edgeIndex;

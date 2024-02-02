@@ -8,10 +8,7 @@ namespace dynnoslice {
 		sliderValue: ui.TimeSliderValue;
 	}
 
-	let mainCanvas: HTMLCanvasElement;
-
-
-	let network: graph.ExtNetwork;
+	let network: ExtNetwork;
 
 	let glCanvas: HTMLCanvasElement;
 	let ctx: WebGL2RenderingContext;
@@ -86,7 +83,7 @@ namespace dynnoslice {
 			}
 		};
 		viewModel.graphFile.subscribe((file) => {
-			network = new graph.ExtNetwork(JSON.parse(file.contents));
+			network = new ExtNetwork(JSON.parse(file.contents));
 
 			//put network buffers into textures
 			const [posBuf, posDims] = network.genPositionsBuffer(1);

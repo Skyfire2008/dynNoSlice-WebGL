@@ -13,6 +13,8 @@
 	<script src="shaders.js"></script>
 	<script src="ui/fileUpload.js"></script>
 	<script src="ui/timeSlider.js"></script>
+	<script src="ui/graphSvg.js"></script>
+	<script src="util/util.js"></script>
 	<script src="index.js"></script>
 
 </head>
@@ -21,7 +23,7 @@
 	<div style="display: flex; flex-direction: column; align-items: flex-start;">
 		<file-upload
 			params="accepts: '.json', id: 'graph-file-upload', label: 'Select graph file', observable: graphFile"></file-upload>
-		<canvas id="mainCanvas" width="1280" height="720"></canvas>
+		<graph-svg params="width: 1280, height: 720"></graph-svg>
 		<button data-bind="click: step">Step</button>
 		<time-slider params="data: timestamps, onChange: onSliderChange"></time-slider>
 		<canvas id="glCanvas"></canvas>
