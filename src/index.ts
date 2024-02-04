@@ -2,10 +2,17 @@ namespace dynnoslice {
 
 	interface ViewModel {
 		graphFile: KnockoutObservable<ui.File>;
-		timestamps: KnockoutObservable<Array<number>>;
+		network: KnockoutObservable<ExtNetwork>;
+		posBuf: KnockoutObservable<Float32Array>;
+		posDims: KnockoutObservable<math.Dims>;
+
+		timesliderMin: KnockoutObservable<number>;
+		timesliderMax: KnockoutObservable<number>;
+		timestamp: KnockoutObservable<number>;
+
 		step: () => void;
-		onSliderChange: (value: ui.TimeSliderValue) => void;
-		sliderValue: ui.TimeSliderValue;
+		onSliderChange: (value: number) => void;
+		sliderValue: number;
 	}
 
 	let network: ExtNetwork;
@@ -43,7 +50,14 @@ namespace dynnoslice {
 
 		const viewModel: ViewModel = {
 			graphFile: ko.observable(null),
-			timestamps: ko.observable([]),
+			network: ko.observable(null),
+			posBuf: ko.observable(null),
+			posDims: ko.observable(null),
+
+			timesliderMin: ko.observable(0),
+			timesliderMax: ko.observable(1),
+			timestamp: ko.observable(0),
+
 			step: () => {
 				//use ping pong index to et correct framebuffer and texture
 				let boundFb = positionFbs[1 - pingPongIndex];
@@ -73,20 +87,23 @@ namespace dynnoslice {
 				quadShader.drawQuad();
 			},
 			onSliderChange: (e) => {
-				//Object.assign(viewModel.sliderValue, e);
-				//redraw();
+				viewModel.timestamp(e);
 			},
-			sliderValue: {
-				time: 0,
-				index: 0,
-				mult: 0
-			}
+			sliderValue: 0
 		};
+
 		viewModel.graphFile.subscribe((file) => {
 			network = new ExtNetwork(JSON.parse(file.contents));
+			viewModel.network(network);
+
+			//update time slider
+			viewModel.timesliderMin(network.startTime);
+			viewModel.timesliderMax(network.endTime);
 
 			//put network buffers into textures
 			const [posBuf, posDims] = network.genPositionsBuffer(1);
+			viewModel.posBuf(posBuf);
+			viewModel.posDims(posDims);
 			const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
 			const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
 
@@ -124,5 +141,4 @@ namespace dynnoslice {
 
 		ko.applyBindings(viewModel);
 	});
-
 }

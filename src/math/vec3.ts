@@ -1,5 +1,8 @@
 namespace math {
 
+	/**
+	 * Three-dimensional vector
+	 */
 	export class Vec3 {
 		readonly values: [number, number, number];
 

@@ -20,6 +20,76 @@ namespace dynnoslice.util {
 		return triNum + min;
 	};
 
+	type Trajectory = Array<{ x: number, y: number, t: number }>;
+
+	export const getTrajectories = (positions: Float32Array, width: number): Array<Trajectory> => {
+		const result: Array<Trajectory> = [];
+		let start = 0;
+		for (let start = 0; start < positions.length; start += width * 4) {
+			const trajectory: Trajectory = [];
+			for (let i = 0; i < width * 4; i += 4) {
+				trajectory.push({
+					x: positions[start + i],
+					y: positions[start + i + 1],
+					t: positions[start + i + 2]
+				});
+			}
+
+			result.push(trajectory);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Finds the position of given node in positions buffer at given time
+	 * @param positions positions buffer
+	 * @param width width of texture for positions buffer
+	 * @param id node id
+	 * @param time time stamp
+	 */
+	export const findPosition = (positions: Float32Array, width: number, id: number, time: number): math.Vec2 => {
+
+		const binSearch = (low: number, index: number, high: number): math.Vec2 => {
+
+			//console.log(low, index, high);
+
+			//memory layout in positions buffer: x, y, time, padding
+			const t0ind = index * 4 + 2;
+			const t1ind = t0ind + 4;
+
+			if (positions[t0ind] <= time && time <= positions[t1ind]) {
+
+				//linearly interpolate between positions in interval
+				const total = positions[t1ind] - positions[t0ind];
+				const mult = (time - positions[t0ind]) / total;
+				const x = math.lerp(positions[index * 4], positions[(index + 1) * 4], mult);
+				const y = math.lerp(positions[index * 4 + 1], positions[(index + 1) * 4 + 1], mult);
+
+				return new math.Vec2([x, y]);
+			} else {
+				if (time < positions[t0ind]) {
+					return binSearch(low, Math.floor((low + index) / 2), index);
+				} else {
+					return binSearch(index, Math.floor((index + high) / 2), high);
+				}
+			}
+		};
+
+		let low = id * width;
+		let high = (id + 1) * width;
+		let index = Math.floor((low + high) / 2);
+
+		//trajectory not always takes up the whole length low->high, in which case time is 0
+		//TODO: this will not work in all cases, instead save how many points a trajectory has been split when generating it
+		while (positions[index * 4 + 2] == 0) {
+			high = index;
+			index = Math.floor((low + high) / 2);
+		}
+
+		return binSearch(low, index, high);
+	};
+
 	/**
 	 * Finds the interval at given timestamp
 	 * @param intervals sorted array of intervals
@@ -35,9 +105,7 @@ namespace dynnoslice.util {
 		 * @param high higher border
 		 */
 		const binSearch = (low: number, index: number, high: number) => {
-
 			const current = intervals[index];
-			console.log(low, index, high, current);
 
 			if (current[0] <= time && time < current[1]) {
 				return current;

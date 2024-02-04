@@ -3,7 +3,9 @@
 
 <head>
 	<script src="knockout-latest.debug.js"></script>
+	<script src="math/math.js"></script>
 	<script src="math/vec3.js"></script>
+	<script src="math/vec2.js"></script>
 	<script src="network.js"></script>
 	<script src="graphics/shader.js"></script>
 	<script src="graphics/quad.js"></script>
@@ -23,9 +25,10 @@
 	<div style="display: flex; flex-direction: column; align-items: flex-start;">
 		<file-upload
 			params="accepts: '.json', id: 'graph-file-upload', label: 'Select graph file', observable: graphFile"></file-upload>
-		<graph-svg params="width: 1280, height: 720"></graph-svg>
+		<graph-svg
+			params="width: 1280, height: 720, network: network, timestamp: timestamp, posBuf: posBuf, posDims: posDims"></graph-svg>
 		<button data-bind="click: step">Step</button>
-		<time-slider params="data: timestamps, onChange: onSliderChange"></time-slider>
+		<time-slider params="min: timesliderMin, max: timesliderMax, onChange: onSliderChange"></time-slider>
 		<canvas id="glCanvas"></canvas>
 	</div>
 </body>

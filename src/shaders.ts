@@ -70,7 +70,7 @@ uniform sampler2D posTex;
 
 //TODO: this is a placeholder, implement it
 void main(){
-	fragColor = texture(posTex, texCoords).argb;
+	fragColor = texture(posTex, texCoords).rgba;
 }
 `;
 }
