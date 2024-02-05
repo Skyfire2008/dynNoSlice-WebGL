@@ -2,8 +2,10 @@
 	"name": "dynnoslice-webgl",
 	"version": "0.0.1",
 	"dependencies": {
-		"knockout": "latest",
-		"@types/knockout": "latest",
+		"react": "latest",
+		"react-dom": "latest",
+		"@types/react": "latest",
+		"@types/react-dom": "latest",
 		"typescript": "v4.4.4"
 	},
 	"scripts": {

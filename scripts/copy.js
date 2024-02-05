@@ -3,7 +3,8 @@
 const fs = require("fs");
 
 const promises = [
-	fs.promises.copyFile("node_modules/knockout/build/output/knockout-latest.debug.js", "bin/knockout-latest.debug.js"),
+	fs.promises.copyFile("node_modules/react/umd/react.production.min.js", "bin/react.production.min.js"),
+	fs.promises.copyFile("node_modules/react-dom/umd/react-dom.production.min.js", "bin/react-dom.production.min.js"),
 	fs.promises.copyFile("src/index.html", "bin/index.html")
 ];
 

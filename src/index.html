@@ -2,7 +2,8 @@
 <html>
 
 <head>
-	<script src="knockout-latest.debug.js"></script>
+	<script src="react.production.min.js"></script>
+	<script src="react-dom.production.min.js"></script>
 	<script src="math/math.js"></script>
 	<script src="math/vec3.js"></script>
 	<script src="math/vec2.js"></script>
@@ -13,25 +14,19 @@
 	<script src="graphics/texture.js"></script>
 	<script src="graphics/framebuffer.js"></script>
 	<script src="shaders.js"></script>
-	<script src="ui/fileUpload.js"></script>
-	<script src="ui/timeSlider.js"></script>
-	<script src="ui/graphSvg.js"></script>
-	<script src="ui/graphNode.js"></script>
+	<script src="ui/App.js"></script>
+	<script src="ui/FileUpload.js"></script>
+	<script src="ui/TimeSlider.js"></script>
+	<script src="ui/GraphSvg.js"></script>
+	<script src="ui/GraphNode.js"></script>
 	<script src="util/util.js"></script>
 	<script src="index.js"></script>
 
 </head>
 
 <body>
-	<div style="display: flex; flex-direction: column; align-items: flex-start;">
-		<file-upload
-			params="accepts: '.json', id: 'graph-file-upload', label: 'Select graph file', observable: graphFile"></file-upload>
-		<graph-svg
-			params="width: 1280, height: 720, network: network, timestamp: timestamp, posBuf: posBuf, posDims: posDims"></graph-svg>
-		<button data-bind="click: step">Step</button>
-		<time-slider params="min: timesliderMin, max: timesliderMax, onChange: onSliderChange"></time-slider>
-		<canvas id="glCanvas"></canvas>
-	</div>
+	<title>DynNoSlice WebGL</title>
+	<div id="app"></div>
 </body>
 
 </html>
