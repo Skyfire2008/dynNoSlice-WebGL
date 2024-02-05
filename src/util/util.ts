@@ -58,6 +58,12 @@ namespace dynnoslice.util {
 			const t0ind = index * 4 + 2;
 			const t1ind = t0ind + 4;
 
+			//if next time is lower than current, we've reached the end of trajectory, move back
+			//TODO: probably won't work in all cases
+			if (positions[t0ind] >= positions[t1ind]) {
+				return binSearch(low, Math.floor((low + index) / 2), index);
+			}
+
 			if (positions[t0ind] <= time && time <= positions[t1ind]) {
 
 				//linearly interpolate between positions in interval

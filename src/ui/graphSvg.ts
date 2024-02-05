@@ -13,6 +13,9 @@ namespace dynnoslice.ui {
 		width: number;
 		height: number;
 		viewBox: string;//TODO: temp
+		network: KnockoutObservable<Network>;
+		nodeIds: KnockoutObservable<Array<number>>;
+		nodePositions: Map<number, KnockoutObservable<math.Vec2>>;
 	}
 
 	ko.components.register("graph-svg", {
@@ -21,7 +24,10 @@ namespace dynnoslice.ui {
 				const viewModel: ViewModel = {
 					width: params.width,
 					height: params.height,
-					viewBox: `0 0 ${params.width} ${params.height}`
+					viewBox: `0 0 ${params.width} ${params.height}`,
+					network: params.network,
+					nodeIds: ko.observable([]),
+					nodePositions: null,
 				};
 
 				//subscribe to timestamp changes
@@ -40,15 +46,27 @@ namespace dynnoslice.ui {
 					}
 
 					//find positions of nodes
-					const nodePositions = new Map<number, math.Vec2>();
+					const nodePositions = new Map<number, KnockoutObservable<math.Vec2>>();
 					for (const id of nodeIds) {
 						const pos = util.findPosition(params.posBuf(), params.posDims().width, id, time);
 						pos.x *= params.width;
 						pos.y *= params.height;
-						nodePositions.set(id, pos);
+						nodePositions.set(id, ko.observable(pos));
 					}
 
-					console.log(nodePositions);
+					//update viewModel
+					viewModel.nodePositions = nodePositions;
+					const nodeIdArray: Array<number> = [];
+					for (const id of nodeIds) {
+						nodeIdArray.push(id);
+					}
+					viewModel.nodeIds(nodeIdArray);
+
+				});
+
+				//subscribe to position changes
+				params.posBuf.subscribe((positions) => {
+
 				});
 
 				console.log("graph-svg working!");
@@ -57,7 +75,15 @@ namespace dynnoslice.ui {
 			}
 		},
 		template: `
-			<svg data-bind="attr: {width: width, height: height, viewBox: viewBox}"></svg>
+			<svg data-bind="attr: {width: width, height: height, viewBox: viewBox}">
+				<!-- ko foreach: nodeIds-->
+					<!-- ko component: { 
+						name: "graph-node", 
+						params: {pos: $component.nodePositions.get($data), label: $component.network().nodes[$data].label}
+					} -->
+					<!-- /ko -->
+				<!-- /ko -->
+			</svg>
 		`
 	});
 }
