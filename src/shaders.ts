@@ -41,7 +41,9 @@ out vec4 fragColor;
 uniform sampler2D tex;
 
 void main(){
-	fragColor = texture(tex, texCoords);
+	vec4 color =  texture(tex, texCoords);
+	color.a = 1.0;
+	fragColor = color;
 }
 `;
 	export const drawQuadVert = `#version 300 es

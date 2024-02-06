@@ -101,7 +101,7 @@ namespace dynnoslice.ui {
 			//readPixels to get update positions texture
 			const buf = new Float32Array(tex.width * tex.height * 4);
 			graphics.Shader.readPixels(tex.width, tex.height, buf);
-			//console.log(buf);
+			setPosBuf(buf);
 
 			//draw the resulting texture
 			graphics.Shader.unbindFramebuffer();
