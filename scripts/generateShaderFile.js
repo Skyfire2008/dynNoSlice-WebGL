@@ -2,6 +2,8 @@
 //so that it wouldn't have to be fetched via XMLHttpRequest or embedded in the HTML page
 //and variable names could be used for completion
 
+//INFO: unused, call npm run copy instead and don't forget to update file names in shaders.ts
+
 const fs = require("fs");
 const path = require("path");
 

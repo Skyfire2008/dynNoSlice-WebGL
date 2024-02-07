@@ -1,78 +1,37 @@
-namespace shaders {
-	export const drawGraphFrag = `#version 300 es
-precision highp float;
+namespace dynnoslice {
 
-in vec4 color;
+	const shaderFiles = ["drawGraph.frag", "drawGraph.vert", "drawQuad.frag", "drawQuad.vert", "updatePositions.frag"];
 
-out vec4 fragColor;
+	interface ShadersType {
+		[inex: string]: string;
+	}
 
-void main(){
-	fragColor = color;
-}`;
-	export const drawGraphVert = `#version 300 es
-precision highp float;
+	export const shaders: ShadersType = {};
 
-layout(location = 0) in vec3 colorIn;
+	/**
+	 * Resolves when all shaders load
+	 */
+	export const shadersLoadPromise = new Promise<void>((resolve, reject) => {
+		const promises: Array<Promise<void>> = [];
 
-uniform sampler2D posTex;
-uniform lowp isampler2D presenceTex;
-uniform int index;
-uniform float mult;
+		for (const file of shaderFiles) {
+			promises.push(new Promise((resolve, reject) => {
+				const path = `shaders/${file}`;
+				const xhr = new XMLHttpRequest();
+				xhr.addEventListener("load", (e) => {
 
-out vec4 color;
+					const dotIndex = file.indexOf(".");
+					const name = file.substring(0, dotIndex) + file.charAt(dotIndex + 1).toLocaleUpperCase() + file.substring(dotIndex + 2);
+					shaders[name] = xhr.responseText;
 
-void main(){
-	int byteIndex = gl_VertexID/8;
-	int byte = texelFetch(presenceTex, ivec2(byteIndex, index), 0).r;
-	int present = (byte >> (gl_VertexID-byteIndex*8)) & 1;
+					resolve();
+				});
+				xhr.addEventListener("error", (e) => reject(`Could not fetch file ${path}`));
+				xhr.open("GET", path);
+				xhr.send();
+			}));
+		}
 
-	vec2 texPos0 = texelFetch(posTex, ivec2(gl_VertexID, index), 0).rg;
-	vec2 texPos1 = texelFetch(posTex, ivec2(gl_VertexID, index+1), 0).rg;
-	gl_Position = vec4(mix(texPos0, texPos1, mult), 0.0, 1.0);
-	color = vec4(colorIn*float(present), 1.0);
-}`;
-	export const drawQuadFrag = `#version 300 es
-precision highp float;
-
-in vec2 texCoords;
-
-out vec4 fragColor;
-
-uniform sampler2D tex;
-
-void main(){
-	vec4 color =  texture(tex, texCoords);
-	color.a = 1.0;
-	fragColor = color;
-}
-`;
-	export const drawQuadVert = `#version 300 es
-precision highp float;
-
-layout(location = 0) in vec2 posIn;
-layout(location = 1) in vec2 uvIn;
-
-out vec2 texCoords;
-
-uniform sampler2D posTex;
-
-void main(){
-	texCoords = uvIn;
-	gl_Position = vec4(posIn, 0.0, 1.0);
-}
-`;
-	export const updatePositionsFrag = `#version 300 es
-precision highp float;
-
-in vec2 texCoords;
-
-out vec4 fragColor;
-
-uniform sampler2D posTex;
-
-//TODO: this is a placeholder, implement it
-void main(){
-	fragColor = texture(posTex, texCoords).rgba;
-}
-`;
+		Promise.all(promises).then(() => resolve());
+	});
 }
