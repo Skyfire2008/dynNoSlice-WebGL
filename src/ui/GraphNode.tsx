@@ -40,7 +40,7 @@ namespace dynnoslice.ui {
 			}
 		}, [label]);
 
-		return (<g transform={`translate(${pos.x - textBox.width / 2}, ${pos.y - textBox.height / 2})`}>
+		return (<g transform={`translate(${pos.x - textBox.width / 2}, ${pos.y - textBox.height / 2})`} className="graph-node">
 			<rect width={textBox.width} height={textBox.height} fill="white" stroke="black"></rect>
 			<text ref={textRef} transform={`translate(${-textBox.x}, ${-textBox.y})`}>{label}</text>
 		</g>);

@@ -11,6 +11,12 @@ namespace dynnoslice.ui {
 
 	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, posBuf, posDims, timestamp }) => {
 
+		const [pan, setPan] = React.useState(new math.Vec2([0, 0]));
+		const dragStartPos = React.useRef<math.Vec2>(null);
+		const prevPan = React.useRef(pan);
+
+		const [zoom, setZoom] = React.useState(1);
+
 		//used to check if network changed
 		const prevNetwork = React.useRef(network);
 
@@ -84,8 +90,48 @@ namespace dynnoslice.ui {
 			return result;
 		}, [nodePositions]);
 
+		// mouse vent handler to pan the graph
+		const onMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+			dragStartPos.current = new math.Vec2([e.clientX, e.clientY]);
+			prevPan.current = pan.clone();
+		};
+
+		const onMouseUp = (e: React.MouseEvent<SVGSVGElement>) => {
+			dragStartPos.current = null;
+		};
+
+		const onMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+			if (dragStartPos.current != null) {
+				const diff = math.Vec2.diff(new math.Vec2([e.clientX, e.clientY]), dragStartPos.current);
+				diff.mult(zoom);
+				setPan(math.Vec2.diff(prevPan.current, diff));
+			}
+		};
+
+		const onWheel = (e: React.WheelEvent) => {
+			const mousePos = new math.Vec2([e.clientX, e.clientY]);
+			const shapeMouse = mousePos.clone();
+			shapeMouse.mult(zoom);
+			shapeMouse.add(pan);
+
+			let mult: number = 0;
+			if (e.deltaY > 0) {
+				mult = 2;
+			} else {
+				mult = 0.5;
+			}
+			setZoom(zoom * mult);
+
+			//set pan in such a way that the point at cursor remains at the same place
+			const newPan = pan.clone();
+			newPan.mult(mult);
+			shapeMouse.mult(1 - mult);
+			newPan.add(shapeMouse);
+			setPan(newPan);
+		};
+
 		return (
-			<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+			<svg width={width} height={height} viewBox={`${pan.x} ${pan.y} ${width * zoom} ${height * zoom}`} onMouseDown={onMouseDown} onMouseUp={onMouseUp} onMouseMove={onMouseMove} onWheel={onWheel}>
 				{edges.map((edge) => <GraphEdge pos1={nodePositions.get(edge.from)} pos2={nodePositions.get(edge.to)}></GraphEdge>)}
 				{nodes.map((props) => <GraphNode {...props}></GraphNode>)}
 			</svg>

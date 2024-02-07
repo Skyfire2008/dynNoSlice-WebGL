@@ -40,6 +40,11 @@ namespace math {
 			this.y += other.y;
 		}
 
+		public sub(other: Vec2) {
+			this.x -= other.x;
+			this.y -= other.y;
+		}
+
 		public mult(m: number) {
 			this.x *= m;
 			this.y *= m;

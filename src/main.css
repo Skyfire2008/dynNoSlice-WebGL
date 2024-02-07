@@ -3,3 +3,8 @@
 	flex-direction: column;
 	align-items: flex-start;
 }
+
+.graph-node {
+	user-select: none;
+	pointer-events: none;
+}
