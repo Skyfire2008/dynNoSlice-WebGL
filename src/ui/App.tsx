@@ -93,9 +93,20 @@ namespace dynnoslice.ui {
 			boundFb.bind();
 			graphics.Shader.clear();
 			posShader.current.use();
+
 			tex.bind(graphics.gl.TEXTURE0);
 			posShader.current.setInt("posTex", 0);
+			adjacenciesTexture.current.bind(graphics.gl.TEXTURE1);
+			posShader.current.setInt("adjacenciesTex", 1);
+			intervalsTexture.current.bind(graphics.gl.TEXTURE2);
+			posShader.current.setInt("intervalsTex", 2);
+
+			let startTime = window.performance.now();
+
 			posShader.current.drawQuad();
+
+			console.log(window.performance.now() - startTime);
+
 			pingPongIndex.current = 1 - pingPongIndex.current;
 
 			//readPixels to get update positions texture

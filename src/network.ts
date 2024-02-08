@@ -23,6 +23,7 @@ namespace dynnoslice {
 		r: number;
 		g: number;
 		b: number;
+		a: number;
 	}
 
 	export class ExtNetwork implements Network {
@@ -70,27 +71,27 @@ namespace dynnoslice {
 		 * @returns [buffer, dimensions]
 		 */
 		public genPositionsBuffer(timeStep: number): [Float32Array, math.Dims] {
-			//data is stored as R: x, G: y, B: time, A: empty(but necessary, cause only RGBA32F texture can be bound to a framebuffer)
+			//data is stored as R: x, G: y, B: time, A: 0.0 if point is final in trajectory segment, 1.0 otherwise
 			//row Y stores trajectories of node Y
 			const trajectories: Array<Array<Color>> = [];
 
 			let width = 0;
 			for (const node of this.nodes) {
 				const trajectory: Array<Color> = [];
-				const nodeX = Math.random();
-				const nodeY = Math.random();
+				const nodeX = Math.random() - 0.5;
+				const nodeY = Math.random() - 0.5;
 
 				for (const interval of node.intervals) {
 					//subdivide each interval by time step
 					let currentTime = interval[0];
 
 					while (currentTime < interval[1]) {
-						trajectory.push({ r: nodeX, g: nodeY, b: currentTime });
+						trajectory.push({ r: nodeX, g: nodeY, b: currentTime, a: 1.0 });
 						currentTime += timeStep;
 					}
 
 					//interval end is skipped by loop, add it here
-					trajectory.push({ r: nodeX, g: nodeY, b: currentTime });
+					trajectory.push({ r: nodeX, g: nodeY, b: currentTime, a: 0.0 });
 				}
 
 				trajectories.push(trajectory);
@@ -107,7 +108,7 @@ namespace dynnoslice {
 					buffer[rowStart + pos++] = point.r;
 					buffer[rowStart + pos++] = point.g;
 					buffer[rowStart + pos++] = point.b;
-					buffer[rowStart + pos++] = 0;
+					buffer[rowStart + pos++] = point.a;
 				}
 
 				rowStart += 4 * width;

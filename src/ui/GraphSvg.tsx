@@ -11,7 +11,7 @@ namespace dynnoslice.ui {
 
 	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, posBuf, posDims, timestamp }) => {
 
-		const [pan, setPan] = React.useState(new math.Vec2([0, 0]));
+		const [pan, setPan] = React.useState(new math.Vec2([-width / 2, -height / 2]));
 		const dragStartPos = React.useRef<math.Vec2>(null);
 		const prevPan = React.useRef(pan);
 
@@ -68,8 +68,9 @@ namespace dynnoslice.ui {
 			const result = new Map<number, math.Vec2>();
 			for (const id of nodeIds) {
 				const pos = util.findPosition(posBuf, posDims.width, id, timestamp);
-				pos.x *= width;
-				pos.y *= height;
+				//INFO: workaround for nodes "exploding"
+				pos.x *= width / 10;
+				pos.y *= height / 10;
 				result.set(id, pos);
 			}
 
