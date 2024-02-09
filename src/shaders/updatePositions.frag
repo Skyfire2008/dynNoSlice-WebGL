@@ -8,7 +8,7 @@ out vec4 fragColor;
 
 uniform sampler2D posTex;
 uniform sampler2D intervalsTex;
-uniform sampler2D adjacenciesTex;
+uniform mediump usampler2D adjacenciesTex;
 
 /**
   * Gets repulsive force for given trajectory point and two edge points
@@ -41,6 +41,57 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 		//force.z = 0.0f;
 		return force;
 	}
+}
+
+vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
+
+	vec3 resultForce = vec3(0.0f);
+
+	//get number of adjacent nodes
+	uint adjNum = texelFetch(adjacenciesTex, ivec2(0, pixelCoords.y), 0).r;
+
+	//for every adjacency...
+	for(uint i = 0u; i < adjNum; i++) {
+		uvec4 adjacency = texelFetch(adjacenciesTex, ivec2(i + 1u, pixelCoords.y), 0);
+		uint adjNodeId = adjacency.r;
+		uint adjIntervalId = adjacency.g;
+
+		//fetch the appropriate interval
+		vec4 interval = texelFetch(intervalsTex, ivec2(0, adjIntervalId), 0);
+		float t0 = interval.r;
+		float t1 = interval.g;
+
+		//if point lies inside the interval...
+		if(pos.z >= t0 && pos.z < interval.y) {
+
+			ivec2 posSize = textureSize(posTex, 0);
+
+			//go through points of adjacent node to find the right ones
+			for(int j = 0; j < posSize.x; j++) {
+				vec4 adjPos = texelFetch(posTex, ivec2(j, adjNodeId), 0);
+
+				if(adjPos.z < t0) {
+					continue;
+				} else if(adjPos.z > t1) {
+					//should not happen
+					break;
+				} else {
+					vec4 nextAdjPos = texelFetch(posTex, ivec2(j + 1, adjNodeId), 0);
+
+					if(adjPos.z <= pos.z && nextAdjPos.z >= pos.z) {
+						vec4 otherPos = mix(adjPos, nextAdjPos, (pos.z - adjPos.z) / (nextAdjPos.z - adjPos.z));
+
+						vec3 force = otherPos.xyz - pos.xyz;
+						force *= length(force) / IDEAL_DIST;
+						resultForce += force;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	return resultForce;
 }
 
 /**
@@ -94,6 +145,9 @@ void main() {
 				}
 			}
 		}
+
+		//add attraction force 
+		totalForce += getAttractionForce(pixelCoords, pos) / 100.0f;
 
 		//update position
 		vec2 interval = getValidInterval(pixelCoords, pos);

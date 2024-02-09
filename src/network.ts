@@ -149,7 +149,7 @@ namespace dynnoslice {
 		}
 
 		/**
-		 * Generates a buffer of eges' indices
+		 * Generates a buffer of edges' indices
 		 * @param edgeIndexMap map edges' ids to starting positions of their intervals in intervals buffer(returned by genIntervalsBuffer)
 		 * @returns 
 		 */
