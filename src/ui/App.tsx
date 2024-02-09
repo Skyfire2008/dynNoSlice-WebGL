@@ -129,11 +129,12 @@ namespace dynnoslice.ui {
 		};
 
 		return (
-			<div>
+			<div className="column">
 				<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
 				<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} posBuf={posBuf} posDims={posDims}></GraphSvg>
 				<button onClick={step}>Step</button>
 				<TimeSlider min={timeSliderMin} max={timeSliderMax} value={timestamp} onChange={onSliderChange}></TimeSlider>
+				<PosViewer posBuf={posBuf} posDims={posDims} network={network} timestamp={timestamp} width={1280} height={200}></PosViewer>
 				<canvas ref={glCanvasRef}></canvas>
 			</div>);
 	};

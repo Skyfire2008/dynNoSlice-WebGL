@@ -20,18 +20,25 @@ namespace dynnoslice.util {
 		return triNum + min;
 	};
 
-	type Trajectory = Array<{ x: number, y: number, t: number }>;
+	export type Trajectory = Array<{ x: number, y: number, t: number, final: boolean }>;
 
+	/**
+	 * Converts position buffer into an array of node trajectories
+	 * @param positions position buffer
+	 * @param width width of position texture
+	 * @returns 
+	 */
 	export const getTrajectories = (positions: Float32Array, width: number): Array<Trajectory> => {
 		const result: Array<Trajectory> = [];
-		let start = 0;
+
 		for (let start = 0; start < positions.length; start += width * 4) {
 			const trajectory: Trajectory = [];
 			for (let i = 0; i < width * 4; i += 4) {
 				trajectory.push({
 					x: positions[start + i],
 					y: positions[start + i + 1],
-					t: positions[start + i + 2]
+					t: positions[start + i + 2],
+					final: positions[start + i + 3] == 0.0
 				});
 			}
 

@@ -23,7 +23,7 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 	float projMult = dot(nodeVec, edgeVec) / dot(edgeVec, edgeVec);
 	if(projMult < 0.0f) { // if projection multiplier < 0, projection falls before edgePos0, use it as projection point
 		nodeProj = edgePos0;
-	} else if(projMult > 1.0f) { // if prokection multiplier > 1, projection falls after edgePos1, use
+	} else if(projMult > 1.0f) { // if projection multiplier > 1, projection falls after edgePos1, use
 		nodeProj = edgePos1;
 	} else { //otherwise calculate projection normally
 		nodeProj = edgePos0 + projMult * edgeVec;
@@ -78,8 +78,13 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 				} else {
 					vec4 nextAdjPos = texelFetch(posTex, ivec2(j + 1, adjNodeId), 0);
 
-					if(adjPos.z <= pos.z && nextAdjPos.z >= pos.z) {
-						vec4 otherPos = mix(adjPos, nextAdjPos, (pos.z - adjPos.z) / (nextAdjPos.z - adjPos.z));
+					if(adjPos.z <= pos.z && pos.z <= nextAdjPos.z) {
+						vec4 otherPos = vec4(0.0f);
+						if(nextAdjPos.z - adjPos.z > 0.0f) {
+							otherPos = mix(adjPos, nextAdjPos, (pos.z - adjPos.z) / (nextAdjPos.z - adjPos.z));
+						} else {
+							otherPos = adjPos;
+						}
 
 						vec3 force = otherPos.xyz - pos.xyz;
 						force *= length(force) / IDEAL_DIST;
@@ -91,6 +96,7 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 		}
 	}
 
+	resultForce.z = 0.0f;
 	return resultForce;
 }
 
@@ -147,7 +153,7 @@ void main() {
 		}
 
 		//add attraction force 
-		totalForce += getAttractionForce(pixelCoords, pos) / 100.0f;
+		//totalForce += getAttractionForce(pixelCoords, pos) / 100.0f;
 
 		//update position
 		vec2 interval = getValidInterval(pixelCoords, pos);

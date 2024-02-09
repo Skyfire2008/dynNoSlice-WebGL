@@ -11,6 +11,7 @@ namespace dynnoslice.ui {
 
 	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, posBuf, posDims, timestamp }) => {
 
+		const svgRef = React.useRef<SVGSVGElement>();
 		const [pan, setPan] = React.useState(new math.Vec2([-width / 2, -height / 2]));
 		const dragStartPos = React.useRef<math.Vec2>(null);
 		const prevPan = React.useRef(pan);
@@ -68,14 +69,13 @@ namespace dynnoslice.ui {
 			const result = new Map<number, math.Vec2>();
 			for (const id of nodeIds) {
 				const pos = util.findPosition(posBuf, posDims.width, id, timestamp);
-				//INFO: workaround for nodes "exploding"
-				pos.x *= width / 10;
-				pos.y *= height / 10;
+				pos.sub(pan);
+				pos.mult(1 / zoom);
 				result.set(id, pos);
 			}
 
 			return result;
-		}, [nodeIds, posBuf]);
+		}, [nodeIds, posBuf, pan, zoom]);
 
 		const nodes = React.useMemo(() => {
 			const result: Array<GraphNodeProps> = [];
@@ -109,7 +109,9 @@ namespace dynnoslice.ui {
 			}
 		};
 
-		const onWheel = (e: React.WheelEvent) => {
+		const onWheel = (e: WheelEvent) => {
+			e.preventDefault();
+
 			const mousePos = new math.Vec2([e.clientX, e.clientY]);
 			const shapeMouse = mousePos.clone();
 			shapeMouse.mult(zoom);
@@ -131,8 +133,14 @@ namespace dynnoslice.ui {
 			setPan(newPan);
 		};
 
+		//attach wheel event manually, cause React doesn't support active events
+		React.useEffect(() => {
+			svgRef.current.addEventListener("wheel", onWheel, { passive: false });
+			return () => svgRef.current.removeEventListener("wheel", onWheel);
+		});
+
 		return (
-			<svg width={width} height={height} viewBox={`${pan.x} ${pan.y} ${width * zoom} ${height * zoom}`} onMouseDown={onMouseDown} onMouseUp={onMouseUp} onMouseMove={onMouseMove} onWheel={onWheel}>
+			<svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} onMouseDown={onMouseDown} onMouseUp={onMouseUp} onMouseMove={onMouseMove}>
 				{edges.map((edge) => <GraphEdge pos1={nodePositions.get(edge.from)} pos2={nodePositions.get(edge.to)}></GraphEdge>)}
 				{nodes.map((props) => <GraphNode {...props}></GraphNode>)}
 			</svg>
