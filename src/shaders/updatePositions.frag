@@ -1,5 +1,5 @@
 #version 300 es
-#define IDEAL_DIST 0.5
+#define IDEAL_DIST 1.0
 precision highp float;
 
 in vec2 texCoords;

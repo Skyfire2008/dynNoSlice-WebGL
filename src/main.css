@@ -4,7 +4,26 @@
 	align-items: flex-start;
 }
 
+.row {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+}
+
 .graph-node {
 	user-select: none;
 	pointer-events: none;
+}
+
+.pos-viewer-label {
+	overflow: hidden;
+	width: 150px;
+	white-space: nowrap;
+}
+
+.pos-viewer-num {
+	overflow: hidden;
+	width: 80px;
+	border: solid 1px black;
+	margin: 0px 0px 0px 10px;
 }

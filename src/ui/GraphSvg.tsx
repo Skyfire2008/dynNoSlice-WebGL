@@ -53,14 +53,29 @@ namespace dynnoslice.ui {
 		 * Ids of nodes present at given timestamp
 		 */
 		const nodeIds = React.useMemo(() => {
-			const result = new Set<number>();
+			/*const result = new Set<number>();
 			for (const edge of edges) {
 				result.add(edge.from);
 				result.add(edge.to);
 			}
 
+			return result;*/
+
+			const result: Array<number> = [];
+			if (network == null) {
+				//skip if network is null
+				return [];
+			} else {
+				for (let i = 0; i < network.nodes.length; i++) {
+					const node = network.nodes[i];
+					if (util.findInterval(node.intervals, timestamp) != null) {
+						result.push(i);
+					}
+				}
+			}
+
 			return result;
-		}, [edges]);
+		}, [network, timestamp]);
 
 		/**
 		 * Maps node ids to their positions
@@ -112,7 +127,7 @@ namespace dynnoslice.ui {
 		const onWheel = (e: WheelEvent) => {
 			e.preventDefault();
 
-			const mousePos = new math.Vec2([e.clientX, e.clientY]);
+			const mousePos = new math.Vec2([e.offsetX, e.offsetY]);
 			const shapeMouse = mousePos.clone();
 			shapeMouse.mult(zoom);
 			shapeMouse.add(pan);
