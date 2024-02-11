@@ -9,6 +9,9 @@ namespace dynnoslice.ui {
 		const [timeSliderMax, settimeSliderMax] = React.useState(1);
 		const [timestamp, setTimestamp] = React.useState(0);
 
+		const [running, setRunning] = React.useState(false);
+		const frameId = React.useRef(0);
+
 		const ctx = React.useRef<WebGL2RenderingContext>(null);
 		const posShader = React.useRef<graphics.Shader>(null); //updates trajectories
 		const quadShader = React.useRef<graphics.Shader>(null); //draws a textured quad
@@ -124,6 +127,22 @@ namespace dynnoslice.ui {
 			quadShader.current.drawQuad();
 		};
 
+		const start = () => {
+			setRunning(true);
+		};
+
+		const stop = () => {
+			setRunning(false);
+		};
+
+		React.useEffect(() => {
+			if (running) {
+				frameId.current = requestAnimationFrame(() => { step() });
+			} else {
+				cancelAnimationFrame(frameId.current);
+			}
+		});
+
 		const onSliderChange = (time: number) => {
 			setTimestamp(time);
 		};
@@ -132,10 +151,14 @@ namespace dynnoslice.ui {
 			<div className="column">
 				<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
 				<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} posBuf={posBuf} posDims={posDims}></GraphSvg>
-				<button onClick={step}>Step</button>
+				<div>
+					<button onClick={start}>Start</button>
+					<button onClick={stop}>Stop</button>
+					<button onClick={step}>Step</button>
+				</div>
 				<TimeSlider min={timeSliderMin} max={timeSliderMax} value={timestamp} onChange={onSliderChange}></TimeSlider>
 				<PosViewer posBuf={posBuf} posDims={posDims} network={network} timestamp={timestamp} width={1800} height={200}></PosViewer>
 				<canvas ref={glCanvasRef}></canvas>
-			</div>);
+			</div >);
 	};
 }

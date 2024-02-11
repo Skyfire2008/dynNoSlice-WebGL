@@ -80,7 +80,6 @@ namespace dynnoslice.ui {
 				result.push(<line x1={x1} y1={svgHeight / 2} x2={x2} y2={svgHeight / 2} stroke={next.t > current.t ? "black" : "red"} strokeWidth={2}></line>);
 			}
 
-			//TODO: REMOVE CIRCLES after end
 			for (let i = 0; i < trajectory.length; i++) {
 				const point = trajectory[i];
 				if (point.final) {
@@ -91,7 +90,7 @@ namespace dynnoslice.ui {
 
 				const x = svgWidth * (point.t - startTime) / totalTime;
 				result.push(
-					<circle cx={x} cy={svgHeight / 2} r={4} fill={point.final ? "white" : "black"} stroke="black">
+					<circle cx={x} cy={svgHeight / 2} r={4} fill={point.final ? "#ffffff40" : "#00000040"} stroke="black">
 						<title>x:{point.x} y:{point.y}</title>
 					</circle>
 				);

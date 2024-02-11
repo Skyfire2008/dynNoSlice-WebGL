@@ -10,6 +10,11 @@ uniform sampler2D posTex;
 uniform sampler2D intervalsTex;
 uniform mediump usampler2D adjacenciesTex;
 
+struct Interval {
+	float t0;
+	float t1;
+};
+
 /**
   * Gets repulsive force for given trajectory point and two edge points
 */
@@ -32,15 +37,12 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 	vec3 force = nodePos - nodeProj;
 
 	//skip if node already too far from the edge
-	if(length(force) > 5.0f * IDEAL_DIST) {
+	/*if(length(force) > 5.0f * IDEAL_DIST) {
 		return vec3(0.0f);
-	} else {
-		force = IDEAL_DIST * IDEAL_DIST * force / dot(force, force);
+	}*/
+	force = IDEAL_DIST * IDEAL_DIST * force / dot(force, force);
 
-		//INFO: prevents points moving around in time
-		//force.z = 0.0f;
-		return force;
-	}
+	return force;
 }
 
 vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
@@ -57,6 +59,7 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 		uint adjIntervalId = adjacency.g;
 
 		//fetch the appropriate interval
+
 		vec4 interval = texelFetch(intervalsTex, ivec2(0, adjIntervalId), 0);
 		float t0 = interval.r;
 		float t1 = interval.g;
@@ -103,17 +106,17 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 /**
   * Calculates the min and max time that the point can take(in order to implement time correctness)
 */
-vec2 getValidInterval(ivec2 pixelCoords, vec4 pos) {
+Interval getValidInterval(ivec2 pixelCoords, vec4 pos) {
 	vec4 prev = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
 	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
 
 	//if point is final/first in trajectory or first in general, it cannot be moved in time 
 	if(pos.a == 0.0f || prev.a == 0.0f || pixelCoords.x == 0) {
-		return vec2(pos.z, pos.z);
+		return Interval(pos.z, pos.z);
 	}
 
 	//
-	return vec2(mix(pos.z, prev.z, 0.1f), mix(pos.z, next.z, 0.1f));
+	return Interval(mix(pos.z, prev.z, 0.1f), mix(pos.z, next.z, 0.1f));
 }
 
 void main() {
@@ -156,12 +159,12 @@ void main() {
 		//totalForce += getAttractionForce(pixelCoords, pos) / 100.0f;
 
 		//update position
-		vec2 interval = getValidInterval(pixelCoords, pos);
+		Interval interval = getValidInterval(pixelCoords, pos);
 		pos.xyz += totalForce;
 
 		//INFO: time correctness
-		pos.z = max(interval.x, pos.z);
-		pos.z = min(interval.y, pos.z);
+		pos.z = max(interval.t0, pos.z);
+		pos.z = min(interval.t1, pos.z);
 	}
 
 	//INFO: gravity

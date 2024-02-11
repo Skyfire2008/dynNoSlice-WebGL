@@ -194,5 +194,63 @@ namespace dynnoslice {
 
 			return [buffer, { width, height: this.nodes.length }];
 		}
+
+		public genNewAdjacenciesBuffer(): [Float32Array, math.Dims] {
+
+			type Adjacency = { node: number, start: number, end: number };
+
+			//first calculate the adjacency list
+			const adjLists: Array<Array<Adjacency>> = [];
+
+			for (const edge of this.edges) {
+				let fromArray = adjLists[edge.from];
+				if (fromArray == null) {
+					fromArray = [];
+					adjLists[edge.from] = fromArray;
+				}
+
+				let toArray = adjLists[edge.to];
+				if (toArray == null) {
+					toArray = [];
+					adjLists[edge.to] = toArray;
+				}
+
+				for (const interval of edge.intervals) {
+					fromArray.push({
+						node: edge.to,
+						start: interval[0],
+						end: interval[1]
+					});
+					toArray.push({
+						node: edge.from,
+						start: interval[0],
+						end: interval[1]
+					});
+				}
+			}
+
+			let width = 0;
+			for (const list of adjLists) {
+				width = Math.max(width, list.length);
+			}
+			width += 1;//1 extra cell for list length
+			const dims: math.Dims = { width, height: adjLists.length };
+
+			const buf = new Float32Array(dims.width * dims.height * 4);
+			let i = 0;
+			for (const list of adjLists) {
+				buf[i] = list.length;
+				i += 4;
+				for (const adj of list) {
+					buf[i] = adj.node;
+					buf[i + 1] = adj.start;
+					buf[i + 2] = adj.end;
+					i += 4;
+				}
+				i += 4 * (width - list.length - 1);
+			}
+
+			return [buf, dims];
+		}
 	}
 }
