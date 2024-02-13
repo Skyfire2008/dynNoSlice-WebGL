@@ -3,6 +3,8 @@
 //TODO: convert to typescript
 const fs = require("fs").promises;
 const path = require("path");
+const getEdgeId = require("./util").getEdgeId;
+const chaptersToIntervals = require("./util").momentsToIntervals;
 
 /*
 interface IntermediateEdge{
@@ -20,47 +22,7 @@ interface IntermediateNode{
 }
 */
 
-/**
- * Generates a unique id for edge given ids of nodes it connects
- * @param a	node id
- * @param b node id
- * @returns 
- */
-const getEdgeId = (a, b) => {
-	let min, max;
-	if (a < b) {
-		min = a;
-		max = b;
-	} else {
-		min = b;
-		max = a;
-	}
 
-	const triNum = max * (max + 1) / 2;
-	return triNum + min;
-};
-
-/**
- * Converts an array of chapters where a dialogue/character appears to array of intervals
- * @param chapters 
- */
-const chaptersToIntervals = (chapters) => {
-	const intervals = [];
-
-	let prevChapter = chapters[0];
-	for (let i = 1; i < chapters.length; i++) {
-		//if chapter numbers are not consecutive, doesn't appear between them
-		if (chapters[i] != chapters[i - 1] + 1) {
-			intervals.push([prevChapter, chapters[i - 1] + 1]);
-			prevChapter = chapters[i];
-		}
-	}
-
-	//last interval was skipped, add it
-	intervals.push([prevChapter, chapters[chapters.length - 1] + 1]);
-
-	return intervals;
-};
 
 fs.readdir("test data/dialogues").then((fileNames) => {
 	const chapterPromises = [];

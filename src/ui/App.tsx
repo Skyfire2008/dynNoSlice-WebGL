@@ -5,8 +5,8 @@ namespace dynnoslice.ui {
 		const [posBuf, setPosBuf] = React.useState<Float32Array>(null);
 		const [posDims, setPosDims] = React.useState<math.Dims>(null);
 
-		const [timeSliderMin, settimeSliderMin] = React.useState(0);
-		const [timeSliderMax, settimeSliderMax] = React.useState(1);
+		const [timeSliderMin, setTimeSliderMin] = React.useState(0);
+		const [timeSliderMax, setTimeSliderMax] = React.useState(1);
 		const [timestamp, setTimestamp] = React.useState(0);
 
 		const [running, setRunning] = React.useState(false);
@@ -47,11 +47,12 @@ namespace dynnoslice.ui {
 			setNetwork(network);
 
 			//update time slider
-			settimeSliderMin(network.startTime);
-			settimeSliderMax(network.endTime);
+			setTimeSliderMin(network.startTime);
+			setTimeSliderMax(network.endTime);
+			setTimestamp(network.startTime);
 
 			//put network buffers into textures
-			const [posBuf, posDims] = network.genPositionsBuffer(1);
+			const [posBuf, posDims] = network.genPositionsBuffer(Number.POSITIVE_INFINITY);
 			setPosBuf(posBuf);
 			setPosDims(posDims);
 			//const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();

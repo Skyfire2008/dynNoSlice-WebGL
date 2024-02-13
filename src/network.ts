@@ -253,6 +253,11 @@ namespace dynnoslice {
 			//calculate texture dimensions
 			let width = 0;
 			for (const list of adjLists) {
+				//skip nodes with no adjacencies
+				if (list == null) {
+					continue;
+				}
+
 				width = Math.max(width, list.length);
 			}
 			width += 1;//1 extra cell for list length
@@ -262,6 +267,13 @@ namespace dynnoslice {
 			const buf = new Float32Array(dims.width * dims.height * 4);
 			let i = 0;
 			for (const list of adjLists) {
+				//set 0 as adjacency length for empty lists and skip
+				if (list == null) {
+					buf[i] = 0;
+					i += 4 * (width - 1);
+					continue;
+				}
+
 				buf[i] = list.length;
 				i += 4;
 				for (const adj of list) {
