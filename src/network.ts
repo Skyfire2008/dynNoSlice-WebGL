@@ -76,10 +76,26 @@ namespace dynnoslice {
 			const trajectories: Array<Array<Color>> = [];
 
 			let width = 0;
-			for (const node of this.nodes) {
+			for (let i = 0; i < this.nodes.length; i++) {
+				const node = this.nodes[i];
 				const trajectory: Array<Color> = [];
-				const nodeX = Math.random() - 0.5;
-				const nodeY = Math.random() - 0.5;
+				let nodeX = Math.random() - 0.5;
+				let nodeY = Math.random() - 0.5;
+
+				//INFO: debug
+				/*if (i == 0) {
+					nodeX = 0;
+					nodeY = 0;
+				} else if (i == 1) {
+					nodeX = 1;
+					nodeY = 0;
+				} else if (i == 2) {
+					nodeX = 1;
+					nodeY = 1;
+				} else if (i == 3) {
+					nodeX = 0;
+					nodeY = 1;
+				}*/
 
 				for (const interval of node.intervals) {
 					//subdivide each interval by time step
@@ -91,7 +107,7 @@ namespace dynnoslice {
 					}
 
 					//interval end is skipped by loop, add it here
-					trajectory.push({ r: nodeX, g: nodeY, b: currentTime, a: 0.0 });
+					trajectory.push({ r: nodeX, g: nodeY, b: interval[1], a: 0.0 });
 				}
 
 				trajectories.push(trajectory);
@@ -195,6 +211,10 @@ namespace dynnoslice {
 			return [buffer, { width, height: this.nodes.length }];
 		}
 
+		/**
+		 * Generates new adjacencies buffer, containing adjacent nodes along with intervals
+		 * @returns [new adjacencies buffer; dimensions of texture for buffer]
+		 */
 		public genNewAdjacenciesBuffer(): [Float32Array, math.Dims] {
 
 			type Adjacency = { node: number, start: number, end: number };
@@ -215,6 +235,7 @@ namespace dynnoslice {
 					adjLists[edge.to] = toArray;
 				}
 
+				//a new element is added for every interval
 				for (const interval of edge.intervals) {
 					fromArray.push({
 						node: edge.to,
@@ -229,6 +250,7 @@ namespace dynnoslice {
 				}
 			}
 
+			//calculate texture dimensions
 			let width = 0;
 			for (const list of adjLists) {
 				width = Math.max(width, list.length);
@@ -236,6 +258,7 @@ namespace dynnoslice {
 			width += 1;//1 extra cell for list length
 			const dims: math.Dims = { width, height: adjLists.length };
 
+			//write the buffer
 			const buf = new Float32Array(dims.width * dims.height * 4);
 			let i = 0;
 			for (const list of adjLists) {

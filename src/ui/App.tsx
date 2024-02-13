@@ -15,9 +15,11 @@ namespace dynnoslice.ui {
 		const ctx = React.useRef<WebGL2RenderingContext>(null);
 		const posShader = React.useRef<graphics.Shader>(null); //updates trajectories
 		const quadShader = React.useRef<graphics.Shader>(null); //draws a textured quad
-		const intervalsTexture = React.useRef<graphics.Texture>(null);
-		const adjacenciesTexture = React.useRef<graphics.Texture>(null);
 		const positionTextures = React.useRef<[graphics.Texture, graphics.Texture]>([null, null]);
+		//const intervalsTexture = React.useRef<graphics.Texture>(null);
+		//const adjacenciesTexture = React.useRef<graphics.Texture>(null);
+		const newAdjTexture = React.useRef<graphics.Texture>(null);
+
 		const positionFbs = React.useRef<[graphics.Framebuffer, graphics.Framebuffer]>([null, null]);
 		const pingPongIndex = React.useRef(0); //source
 
@@ -52,8 +54,9 @@ namespace dynnoslice.ui {
 			const [posBuf, posDims] = network.genPositionsBuffer(1);
 			setPosBuf(posBuf);
 			setPosDims(posDims);
-			const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
-			const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
+			//const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
+			//const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
+			const [newAdjBuf, newAdjDims] = network.genNewAdjacenciesBuffer();
 
 			//cleanup old GPU data
 			for (let i = 0; i < 2; i++) {
@@ -64,18 +67,22 @@ namespace dynnoslice.ui {
 					positionFbs[i].dispose();
 				}
 			}
-			if (intervalsTexture.current != null) {
+			/*if (intervalsTexture.current != null) {
 				intervalsTexture.current.dispose();
 			}
 			if (adjacenciesTexture.current != null) {
 				adjacenciesTexture.current.dispose();
+			}*/
+			if (newAdjTexture.current != null) {
+				newAdjTexture.current.dispose();
 			}
 
 			//create new textures and framebuffers
 			positionTextures.current[0] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
 			positionTextures.current[1] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, new Float32Array(4 * posDims.width * posDims.height));
-			intervalsTexture.current = graphics.Texture.makeIntervalsTexture(1, intervalsBuf.length / 2, intervalsBuf);
-			adjacenciesTexture.current = graphics.Texture.makeAdjacenciesTexture(adjDims.width, adjDims.height, adjacencyBuf);
+			newAdjTexture.current = graphics.Texture.makeNewAdjTexture(newAdjDims.width, newAdjDims.height, newAdjBuf);
+			//intervalsTexture.current = graphics.Texture.makeIntervalsTexture(1, intervalsBuf.length / 2, intervalsBuf);
+			//adjacenciesTexture.current = graphics.Texture.makeAdjacenciesTexture(adjDims.width, adjDims.height, adjacencyBuf);
 			for (let i = 0; i < 2; i++) {
 				positionFbs.current[i] = new graphics.Framebuffer(positionTextures.current[i].id, posDims.width, posDims.height);
 			}
@@ -99,10 +106,12 @@ namespace dynnoslice.ui {
 
 			tex.bind(graphics.gl.TEXTURE0);
 			posShader.current.setInt("posTex", 0);
-			adjacenciesTexture.current.bind(graphics.gl.TEXTURE1);
+			/*adjacenciesTexture.current.bind(graphics.gl.TEXTURE1);
 			posShader.current.setInt("adjacenciesTex", 1);
 			intervalsTexture.current.bind(graphics.gl.TEXTURE2);
-			posShader.current.setInt("intervalsTex", 2);
+			posShader.current.setInt("intervalsTex", 2);*/
+			newAdjTexture.current.bind(graphics.gl.TEXTURE1);
+			posShader.current.setInt("newAdjTex", 1);
 
 			let startTime = window.performance.now();
 

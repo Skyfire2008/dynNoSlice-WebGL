@@ -24,7 +24,7 @@ namespace graphics {
 					type = gl.FLOAT;
 					break;
 				case gl.RGB32F:
-					console.log("RGB32F is not color renderable, do not use for positions");
+					console.warn("RGB32F is not color renderable, do not use for positions");
 					format = gl.RGB;
 					type = gl.FLOAT;
 					break;
@@ -61,6 +61,10 @@ namespace graphics {
 		 */
 		public static makeAdjacenciesTexture(width: number, height: number, data: Uint16Array) {
 			return Texture.makeTexture(width, height, data, gl.RG16UI);
+		}
+
+		public static makeNewAdjTexture(width: number, height: number, data: Float32Array) {
+			return Texture.makeTexture(width, height, data, gl.RGBA32F);
 		}
 
 		/**

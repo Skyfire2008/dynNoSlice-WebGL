@@ -1,5 +1,5 @@
 #version 300 es
-#define IDEAL_DIST 1.0
+#define IDEAL_DIST 2.0
 precision highp float;
 
 in vec2 texCoords;
@@ -9,6 +9,7 @@ out vec4 fragColor;
 uniform sampler2D posTex;
 uniform sampler2D intervalsTex;
 uniform mediump usampler2D adjacenciesTex;
+uniform sampler2D newAdjTex;
 
 struct Interval {
 	float t0;
@@ -40,66 +41,74 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 	/*if(length(force) > 5.0f * IDEAL_DIST) {
 		return vec3(0.0f);
 	}*/
+
 	force = IDEAL_DIST * IDEAL_DIST * force / dot(force, force);
 
 	return force;
 }
 
 vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
-
+	int maxPosNum = textureSize(posTex, 0).x;
 	vec3 resultForce = vec3(0.0f);
 
-	//get number of adjacent nodes
-	uint adjNum = texelFetch(adjacenciesTex, ivec2(0, pixelCoords.y), 0).r;
+	//get number of adjacencies
+	int adjNum = int(texelFetch(newAdjTex, ivec2(0, pixelCoords.y), 0).r);
 
 	//for every adjacency...
-	for(uint i = 0u; i < adjNum; i++) {
-		uvec4 adjacency = texelFetch(adjacenciesTex, ivec2(i + 1u, pixelCoords.y), 0);
-		uint adjNodeId = adjacency.r;
-		uint adjIntervalId = adjacency.g;
+	for(int i = 0; i < adjNum; i++) {
+		//get interval for this adjacency
+		vec4 foo = texelFetch(newAdjTex, ivec2(i + 1, pixelCoords.y), 0);
+		Interval curInterval = Interval(foo.y, foo.z);
 
-		//fetch the appropriate interval
+		//if position outside of interval, skip
+		if(pos.z < curInterval.t0 || pos.z > curInterval.t1) {
+			continue;
+		}
 
-		vec4 interval = texelFetch(intervalsTex, ivec2(0, adjIntervalId), 0);
-		float t0 = interval.r;
-		float t1 = interval.g;
+		//go through positions of adjacent node
+		int adjNode = int(foo.r);
+		vec4 prevAdjPos = texelFetch(posTex, ivec2(0, adjNode), 0);
+		for(int j = 0; j < maxPosNum; j++) {
 
-		//if point lies inside the interval...
-		if(pos.z >= t0 && pos.z < interval.y) {
+			vec4 adjPos = texelFetch(posTex, ivec2(j, adjNode), 0);
 
-			ivec2 posSize = textureSize(posTex, 0);
-
-			//go through points of adjacent node to find the right ones
-			for(int j = 0; j < posSize.x; j++) {
-				vec4 adjPos = texelFetch(posTex, ivec2(j, adjNodeId), 0);
-
-				if(adjPos.z < t0) {
-					continue;
-				} else if(adjPos.z > t1) {
-					//should not happen
-					break;
-				} else {
-					vec4 nextAdjPos = texelFetch(posTex, ivec2(j + 1, adjNodeId), 0);
-
-					if(adjPos.z <= pos.z && pos.z <= nextAdjPos.z) {
-						vec4 otherPos = vec4(0.0f);
-						if(nextAdjPos.z - adjPos.z > 0.0f) {
-							otherPos = mix(adjPos, nextAdjPos, (pos.z - adjPos.z) / (nextAdjPos.z - adjPos.z));
-						} else {
-							otherPos = adjPos;
-						}
-
-						vec3 force = otherPos.xyz - pos.xyz;
-						force *= length(force) / IDEAL_DIST;
-						resultForce += force;
-						break;
-					}
-				}
+			//if adjacent node's previous position is after point, break
+			if(prevAdjPos.z > pos.z) {
+				break;
 			}
+
+			//if adjacent node's positions have ended, break
+			if(adjPos.a == 0.0f && prevAdjPos.a == 0.0f) {
+				break;
+			}
+
+			//if point exists within adjacent node's current segment, apply force
+			if(prevAdjPos.z <= pos.z && pos.z <= adjPos.z) {
+
+				//INFO: debug
+				//return vec3(adjNode, j, 0.0f);
+
+				vec4 otherPos = vec4(0.0f);
+				if(adjPos.z - prevAdjPos.z > 0.0f) {
+					otherPos = mix(prevAdjPos, adjPos, (pos.z - prevAdjPos.z) / (adjPos.z - prevAdjPos.z));
+				} else {
+					otherPos = adjPos;
+				}
+
+				//INFO: debug
+				///return otherPos.xyz;
+
+				vec3 force = otherPos.xyz - pos.xyz;
+				force *= length(force) / IDEAL_DIST;
+
+				resultForce += force;
+				break;
+			}
+
+			prevAdjPos = adjPos;
 		}
 	}
 
-	resultForce.z = 0.0f;
 	return resultForce;
 }
 
@@ -109,6 +118,9 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 Interval getValidInterval(ivec2 pixelCoords, vec4 pos) {
 	vec4 prev = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
 	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
+
+	//INFO: debug
+	//return Interval(pos.z, pos.z);
 
 	//if point is final/first in trajectory or first in general, it cannot be moved in time 
 	if(pos.a == 0.0f || prev.a == 0.0f || pixelCoords.x == 0) {
@@ -126,48 +138,60 @@ void main() {
 	vec4 pos = texelFetch(posTex, pixelCoords, 0);
 
 	//skip if position is outside of intervals
-	bool skip = false;
 	if(pos.a == 0.0f) {
-		skip = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0).a == 0.0f;
+		if(texelFetch(posTex, pixelCoords - ivec2(1, 0), 0).a == 0.0f) {
+			fragColor = pos;
+			return;
+		}
 	}
 
-	if(!skip) {
-		vec3 totalForce = vec3(0.0f);
+	//INFO: debug
+	//fragColor.rg = getAttractionForce(pixelCoords, pos).xy;
+	//fragColor.ba = pos.ba;
+	//return;
 
-		//for every node trajectory...
-		for(int id = 0; id < texSize.y; id++) {
+	vec3 totalForce = vec3(0.0f);
 
-			//if current pixel belongs to processed trajectory, skip
-			if(id != pixelCoords.y) {
+	//for every node trajectory...
+	for(int id = 0; id < texSize.y; id++) {
 
-				//for every position in trajectory...
-				for(int i = 0; i < texSize.x - 1; i++) {
-					vec4 edgePos0 = texelFetch(posTex, ivec2(i, id), 0);
+		//if current pixel belongs to processed trajectory, skip
+		if(id != pixelCoords.y) {
 
-					//skip if this position is final in trajectory segment
-					if(edgePos0.a == 0.0f) {
-						continue;
-					}
+			//for every position in trajectory...
+			for(int i = 0; i < texSize.x - 1; i++) {
+				vec4 edgePos0 = texelFetch(posTex, ivec2(i, id), 0);
 
-					vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
-					totalForce += getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
+				//skip if this position is final in trajectory segment
+				if(edgePos0.a == 0.0f) {
+					continue;
 				}
+
+				vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
+				totalForce += getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
 			}
 		}
-
-		//add attraction force 
-		//totalForce += getAttractionForce(pixelCoords, pos) / 100.0f;
-
-		//update position
-		Interval interval = getValidInterval(pixelCoords, pos);
-		pos.xyz += totalForce;
-
-		//INFO: time correctness
-		pos.z = max(interval.t0, pos.z);
-		pos.z = min(interval.t1, pos.z);
 	}
 
+	//add attraction force 
+	totalForce += getAttractionForce(pixelCoords, pos) * 0.01f;
+
+	//update position
+	Interval interval = getValidInterval(pixelCoords, pos);
+
+	//INFO: debug
+	//float fLength = length(totalForce);
+	//if(fLength > 10.0f) {
+	//	totalForce *= 10.0f / fLength;
+	//}
+
+	pos.xyz += totalForce;
+
+	//INFO: time correctness
+	pos.z = max(interval.t0, pos.z);
+	pos.z = min(interval.t1, pos.z);
+
 	//INFO: gravity
-	pos.xy *= 0.99f;
+	pos.xy *= 0.9f;
 	fragColor = pos;
 }
