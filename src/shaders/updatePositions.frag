@@ -16,6 +16,10 @@ struct Interval {
 	float t1;
 };
 
+bool intervalsIntersect(Interval a, Interval b) {
+	return a.t1 > b.t0 && b.t1 < a.t0;
+}
+
 /**
   * Gets repulsive force for given trajectory point and two edge points
 */
@@ -112,6 +116,19 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 	return resultForce;
 }
 
+vec3 getNewAttractionForce(ivec2 pixelCoords, vec4 pos) {
+	int maxPosNum = textureSize(posTex, 0).x;
+	vec3 resultForce = vec3(0.0f);
+
+	return resultForce;
+}
+
+vec3 getGravityForce(vec4 pos) {
+	vec3 force = -0.9f * pos.xyz;
+	force.z = 0.0f;
+	return force;
+}
+
 /**
   * Calculates the min and max time that the point can take(in order to implement time correctness)
 */
@@ -120,7 +137,7 @@ Interval getValidInterval(ivec2 pixelCoords, vec4 pos) {
 	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
 
 	//INFO: debug
-	//return Interval(pos.z, pos.z);
+	return Interval(pos.z, pos.z);
 
 	//if point is final/first in trajectory or first in general, it cannot be moved in time 
 	if(pos.a == 0.0f || prev.a == 0.0f || pixelCoords.x == 0) {
@@ -174,24 +191,22 @@ void main() {
 	}
 
 	//add attraction force 
-	totalForce += getAttractionForce(pixelCoords, pos) * 0.01f;
+	totalForce += getAttractionForce(pixelCoords, pos) * 0.9f;
 
-	//update position
+	//add gravity
+	totalForce += getGravityForce(pos);
+
 	Interval interval = getValidInterval(pixelCoords, pos);
 
-	//INFO: debug
-	//float fLength = length(totalForce);
-	//if(fLength > 10.0f) {
-	//	totalForce *= 10.0f / fLength;
-	//}
-
-	pos.xyz += totalForce;
+	//update position
+	pos.xyz += totalForce * 0.01f;
 
 	//INFO: time correctness
 	pos.z = max(interval.t0, pos.z);
 	pos.z = min(interval.t1, pos.z);
 
-	//INFO: gravity
-	pos.xy *= 0.9f;
+	//INFO: debug
+	pos.xy = max(min(pos.xy, vec2(1280.0f, 720.0f)), vec2(-1280.0f, -720.0f));
+
 	fragColor = pos;
 }

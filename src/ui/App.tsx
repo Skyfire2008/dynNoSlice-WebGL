@@ -52,7 +52,7 @@ namespace dynnoslice.ui {
 			setTimestamp(network.startTime);
 
 			//put network buffers into textures
-			const [posBuf, posDims] = network.genPositionsBuffer(Number.POSITIVE_INFINITY);
+			const [posBuf, posDims] = network.genPositionsBuffer(1);
 			setPosBuf(posBuf);
 			setPosDims(posDims);
 			//const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();

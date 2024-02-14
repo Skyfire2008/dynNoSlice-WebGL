@@ -25,26 +25,49 @@ namespace dynnoslice.ui {
 
 	const NodeViewer: React.FC<NodeViewerProps> = ({ label, trajectory, num, timestamp, posBufWidth, startTime, endTime }) => {
 
-		//trajectory point at timestamp
 		const pos = React.useMemo(() => {
 
-			for (let i = 0; i < trajectory.length - 1; i++) {
-				const current = trajectory[i];
-				const next = trajectory[i + 1];
+			const binSearch = (low: number, index: number, high: number): math.Vec2 => {
+				const current = trajectory[index];
+				const next = (index + 1) != trajectory.length ? trajectory[index + 1] : trajectory[index];
 
-				if (current.t > timestamp) {
-					break;
+				//if timestamp is inside current interval...
+				if (current.t <= timestamp && timestamp <= next.t) {
+					if (current.final) {
+						return new math.Vec2([NaN, NaN]);
+					} else {
+						const interval = next.t - current.t;
+
+						//special case when current is the final bend in trajectory
+						if (interval <= 0) {
+							return new math.Vec2([current.x, current.y]);
+						}
+
+						const mult = (timestamp - current.t) / interval;
+						const x = math.lerp(current.x, next.x, mult);
+						const y = math.lerp(current.y, next.y, mult);
+						return new math.Vec2([x, y]);
+					}
+				} else {
+					if (timestamp < current.t) {
+						const newIndex = Math.floor((low + index) / 2);
+						if (newIndex != index) {
+							return binSearch(low, newIndex, index);
+						} else {
+							return new math.Vec2([NaN, NaN]);
+						}
+					} else {
+						const newIndex = Math.floor((index + high) / 2);
+						if (newIndex != index) {
+							return binSearch(index, newIndex, high);
+						} else {
+							return new math.Vec2([NaN, NaN]);
+						}
+					}
 				}
+			};
 
-				if (current.t <= timestamp && timestamp < next.t && !current.final) {
-					const mult = (timestamp - current.t) / (next.t - current.t);
-					const x = math.lerp(current.x, next.x, mult);
-					const y = math.lerp(current.y, next.y, mult);
-					return new math.Vec2([x, y]);
-				}
-			}
-
-			return new math.Vec2([NaN, NaN]);
+			return binSearch(0, Math.floor(trajectory.length / 2), trajectory.length);
 
 		}, [trajectory, timestamp]);
 
@@ -82,11 +105,6 @@ namespace dynnoslice.ui {
 
 			for (let i = 0; i < trajectory.length; i++) {
 				const point = trajectory[i];
-				if (point.final) {
-					if (trajectory[i - 1].final) {
-						break;
-					}
-				}
 
 				const x = svgWidth * (point.t - startTime) / totalTime;
 				result.push(
@@ -130,18 +148,20 @@ namespace dynnoslice.ui {
 		const nodeProps = React.useMemo(() => {
 			const result: Array<NodeViewerProps> = [];
 
-			if (network != null) {
-				for (let i = 0; i < network.nodes.length; i++) {
-					result.push({
-						label: network.nodes[i].label,
-						trajectory: trajectories[i],
-						num: i
-					});
-				}
+			if (network == null) {
+				return result;
+			}
+
+			for (let i = 0; i < network.nodes.length; i++) {
+				result.push({
+					label: network.nodes[i].label,
+					trajectory: trajectories[i],
+					num: i
+				});
 			}
 
 			return result;
-		}, [network, trajectories]);
+		}, [trajectories]);
 
 		return (
 			<div style={{ width, maxHeight: maxHeight, overflow: "auto" }}>

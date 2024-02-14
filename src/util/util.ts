@@ -33,13 +33,23 @@ namespace dynnoslice.util {
 
 		for (let start = 0; start < positions.length; start += width * 4) {
 			const trajectory: Trajectory = [];
+			let prevFinal = false;
 			for (let i = 0; i < width * 4; i += 4) {
+
+				//if current and previous points are final, the trajectory ended
+				const final = positions[start + i + 3] == 0.0;
+				if (final && prevFinal) {
+					break;
+				}
+
 				trajectory.push({
 					x: positions[start + i],
 					y: positions[start + i + 1],
 					t: positions[start + i + 2],
-					final: positions[start + i + 3] == 0.0
+					final
 				});
+
+				prevFinal = final;
 			}
 
 			result.push(trajectory);
