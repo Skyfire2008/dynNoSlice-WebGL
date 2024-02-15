@@ -27,3 +27,17 @@
 	border: solid 1px black;
 	margin: 0px 0px 0px 10px;
 }
+
+.setting {
+	display: flex;
+	justify-content: space-between;
+}
+
+.setting>label {
+	padding: 0px 10px 0px 0px;
+}
+
+.setting .num-input {
+	width: 50px;
+	text-align: end;
+}

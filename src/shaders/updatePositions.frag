@@ -1,5 +1,4 @@
 #version 300 es
-#define IDEAL_DIST 2.0
 precision highp float;
 
 in vec2 texCoords;
@@ -10,6 +9,13 @@ uniform sampler2D posTex;
 uniform sampler2D intervalsTex;
 uniform mediump usampler2D adjacenciesTex;
 uniform sampler2D newAdjTex;
+
+uniform float idealEdgeLength;
+uniform bool timeChangeEnabled;
+uniform bool repulsionEnabled;
+uniform bool attractionEnabled;
+uniform bool trajectoryStraighteningEnabled;
+uniform bool gravityEnabled;
 
 struct Interval {
 	float t0;
@@ -42,13 +48,13 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 	vec3 force = nodePos - nodeProj;
 
 	//skip if node already too far from the edge
-	/*if(length(force) > 5.0f * IDEAL_DIST) {
+	/*if(length(force) > 5.0f * idealEdgeLength) {
 		return vec3(0.0f);
 	}*/
 
-	force = IDEAL_DIST * IDEAL_DIST * force / dot(force, force);
+	force = idealEdgeLength * idealEdgeLength * force / dot(force, force);
 
-	return force;
+	return 2.0f * force;
 }
 
 vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
@@ -103,7 +109,7 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 				///return otherPos.xyz;
 
 				vec3 force = otherPos.xyz - pos.xyz;
-				force *= length(force) / IDEAL_DIST;
+				force *= length(force) / idealEdgeLength;
 
 				resultForce += force;
 				break;
@@ -129,22 +135,43 @@ vec3 getGravityForce(vec4 pos) {
 	return force;
 }
 
+vec3 getTrajectoryStraighteningForce(ivec2 pixelCoords, vec4 pos) {
+	//if node is last in segment, skip
+	if(pos.a == 0.0f) {
+		return vec3(0.0f);
+	}
+
+	vec4 prev = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
+
+	//if node is first in segment, skip
+	if(prev.a == 0.0f) {
+		return vec3(0.0f);
+	}
+
+	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
+
+	vec3 center = (pos.xyz + next.xyz + prev.xyz) / 3.0f;
+
+	return center - pos.xyz;
+}
+
 /**
   * Calculates the min and max time that the point can take(in order to implement time correctness)
 */
 Interval getValidInterval(ivec2 pixelCoords, vec4 pos) {
+
+	if(!timeChangeEnabled) {
+		return Interval(pos.z, pos.z);
+	}
+
 	vec4 prev = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
 	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
-
-	//INFO: debug
-	return Interval(pos.z, pos.z);
 
 	//if point is final/first in trajectory or first in general, it cannot be moved in time 
 	if(pos.a == 0.0f || prev.a == 0.0f || pixelCoords.x == 0) {
 		return Interval(pos.z, pos.z);
 	}
 
-	//
 	return Interval(mix(pos.z, prev.z, 0.1f), mix(pos.z, next.z, 0.1f));
 }
 
@@ -162,50 +189,56 @@ void main() {
 		}
 	}
 
-	//INFO: debug
-	//fragColor.rg = getAttractionForce(pixelCoords, pos).xy;
-	//fragColor.ba = pos.ba;
-	//return;
-
 	vec3 totalForce = vec3(0.0f);
 
-	//for every node trajectory...
-	for(int id = 0; id < texSize.y; id++) {
+	if(repulsionEnabled) {
+		//for every node trajectory...
+		for(int id = 0; id < texSize.y; id++) {
 
-		//if current pixel belongs to processed trajectory, skip
-		if(id != pixelCoords.y) {
+			//if current pixel belongs to processed trajectory, skip
+			if(id != pixelCoords.y) {
 
-			//for every position in trajectory...
-			for(int i = 0; i < texSize.x - 1; i++) {
-				vec4 edgePos0 = texelFetch(posTex, ivec2(i, id), 0);
+				//for every position in trajectory...
+				for(int i = 0; i < texSize.x - 1; i++) {
+					vec4 edgePos0 = texelFetch(posTex, ivec2(i, id), 0);
 
-				//skip if this position is final in trajectory segment
-				if(edgePos0.a == 0.0f) {
-					continue;
+					//skip if this position is final in trajectory segment
+					if(edgePos0.a == 0.0f) {
+						continue;
+					}
+
+					vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
+					totalForce += getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
 				}
-
-				vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
-				totalForce += getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
 			}
 		}
 	}
 
 	//add attraction force 
-	totalForce += getAttractionForce(pixelCoords, pos) * 0.9f;
+	if(attractionEnabled) {
+		totalForce += getAttractionForce(pixelCoords, pos);
+	}
 
 	//add gravity
-	totalForce += getGravityForce(pos);
+	if(gravityEnabled) {
+		totalForce += getGravityForce(pos);
+	}
+
+	//add trajectory smoothing force
+	if(trajectoryStraighteningEnabled) {
+		totalForce += getTrajectoryStraighteningForce(pixelCoords, pos);
+	}
 
 	Interval interval = getValidInterval(pixelCoords, pos);
 
 	//update position
 	pos.xyz += totalForce * 0.01f;
 
-	//INFO: time correctness
+	//time correctness
 	pos.z = max(interval.t0, pos.z);
 	pos.z = min(interval.t1, pos.z);
 
-	//INFO: debug
+	//limit positions
 	pos.xy = max(min(pos.xy, vec2(1280.0f, 720.0f)), vec2(-1280.0f, -720.0f));
 
 	fragColor = pos;

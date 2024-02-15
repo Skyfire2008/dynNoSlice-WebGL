@@ -12,12 +12,20 @@ namespace dynnoslice.ui {
 		const [running, setRunning] = React.useState(false);
 		const frameId = React.useRef(0);
 
+		//SETTINGS:
+		const [bendInterval, setBendInterval] = React.useState(1);
+		const [bendsEnabled, setBendsEnabled] = React.useState(true);
+		const [timeChangeEnabled, setTimeChangeEnabled] = React.useState(true);
+		const [idealEdgeLength, setIdealEdgeLength] = React.useState(1);
+		const [repulsionEnabled, setRepulsionEnabled] = React.useState(true);
+		const [attractionEnabled, setAttractionEnabled] = React.useState(true);
+		const [trajectoryStraighteningEnabled, setTrajectoryStraighteningEnabled] = React.useState(true);
+		const [gravityEnabled, setGravityEnabled] = React.useState(true);
+
 		const ctx = React.useRef<WebGL2RenderingContext>(null);
 		const posShader = React.useRef<graphics.Shader>(null); //updates trajectories
 		const quadShader = React.useRef<graphics.Shader>(null); //draws a textured quad
 		const positionTextures = React.useRef<[graphics.Texture, graphics.Texture]>([null, null]);
-		//const intervalsTexture = React.useRef<graphics.Texture>(null);
-		//const adjacenciesTexture = React.useRef<graphics.Texture>(null);
 		const newAdjTexture = React.useRef<graphics.Texture>(null);
 
 		const positionFbs = React.useRef<[graphics.Framebuffer, graphics.Framebuffer]>([null, null]);
@@ -39,6 +47,34 @@ namespace dynnoslice.ui {
 		}, []);
 
 		/**
+		 * Reload dataset, generate new random positions using the config
+		 */
+		const reloadDataset = () => {
+			//put network buffers into textures
+			const [posBuf, posDims] = network.genPositionsBuffer(bendsEnabled ? bendInterval : Number.POSITIVE_INFINITY);
+			setPosBuf(posBuf);
+			setPosDims(posDims);
+
+			//cleanup old GPU data
+			for (let i = 0; i < 2; i++) {
+				if (positionTextures[i] != null) {
+					positionTextures[i].dispose();
+				}
+				if (positionFbs[i] != null) {
+					positionFbs[i].dispose();
+				}
+			}
+
+			//create new textures and framebuffers
+			positionTextures.current[0] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
+			positionTextures.current[1] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, new Float32Array(4 * posDims.width * posDims.height));
+			for (let i = 0; i < 2; i++) {
+				positionFbs.current[i] = new graphics.Framebuffer(positionTextures.current[i].id, posDims.width, posDims.height);
+			}
+			pingPongIndex.current = 0;
+		};
+
+		/**
 		 * File input callback
 		 * @param file file from file upload component 
 		 */
@@ -52,11 +88,9 @@ namespace dynnoslice.ui {
 			setTimestamp(network.startTime);
 
 			//put network buffers into textures
-			const [posBuf, posDims] = network.genPositionsBuffer(1);
+			const [posBuf, posDims] = network.genPositionsBuffer(bendsEnabled ? bendInterval : Number.POSITIVE_INFINITY);
 			setPosBuf(posBuf);
 			setPosDims(posDims);
-			//const [intervalsBuf, edgeMap] = network.genIntervalsBuffer();
-			//const [adjacencyBuf, adjDims] = network.genAdjacenciesBuffer(edgeMap);
 			const [newAdjBuf, newAdjDims] = network.genNewAdjacenciesBuffer();
 
 			//cleanup old GPU data
@@ -68,12 +102,6 @@ namespace dynnoslice.ui {
 					positionFbs[i].dispose();
 				}
 			}
-			/*if (intervalsTexture.current != null) {
-				intervalsTexture.current.dispose();
-			}
-			if (adjacenciesTexture.current != null) {
-				adjacenciesTexture.current.dispose();
-			}*/
 			if (newAdjTexture.current != null) {
 				newAdjTexture.current.dispose();
 			}
@@ -82,8 +110,6 @@ namespace dynnoslice.ui {
 			positionTextures.current[0] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
 			positionTextures.current[1] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, new Float32Array(4 * posDims.width * posDims.height));
 			newAdjTexture.current = graphics.Texture.makeNewAdjTexture(newAdjDims.width, newAdjDims.height, newAdjBuf);
-			//intervalsTexture.current = graphics.Texture.makeIntervalsTexture(1, intervalsBuf.length / 2, intervalsBuf);
-			//adjacenciesTexture.current = graphics.Texture.makeAdjacenciesTexture(adjDims.width, adjDims.height, adjacencyBuf);
 			for (let i = 0; i < 2; i++) {
 				positionFbs.current[i] = new graphics.Framebuffer(positionTextures.current[i].id, posDims.width, posDims.height);
 			}
@@ -107,12 +133,16 @@ namespace dynnoslice.ui {
 
 			tex.bind(graphics.gl.TEXTURE0);
 			posShader.current.setInt("posTex", 0);
-			/*adjacenciesTexture.current.bind(graphics.gl.TEXTURE1);
-			posShader.current.setInt("adjacenciesTex", 1);
-			intervalsTexture.current.bind(graphics.gl.TEXTURE2);
-			posShader.current.setInt("intervalsTex", 2);*/
 			newAdjTexture.current.bind(graphics.gl.TEXTURE1);
 			posShader.current.setInt("newAdjTex", 1);
+
+			//set settings
+			posShader.current.setBool("timeChangeEnabled", timeChangeEnabled);
+			posShader.current.setFloat("idealEdgeLength", idealEdgeLength);
+			posShader.current.setBool("repulsionEnabled", repulsionEnabled);
+			posShader.current.setBool("attractionEnabled", attractionEnabled);
+			posShader.current.setBool("trajectoryStraighteningEnabled", trajectoryStraighteningEnabled);
+			posShader.current.setBool("gravityEnabled", gravityEnabled);
 
 			let startTime = window.performance.now();
 
@@ -157,10 +187,33 @@ namespace dynnoslice.ui {
 			setTimestamp(time);
 		};
 
+		const onSettingsChange = (settings: Settings) => {
+			setBendInterval(settings.bendInterval);
+			setBendsEnabled(settings.bendsEnabled);
+			setTimeChangeEnabled(settings.timeChangeEnabled);
+			setIdealEdgeLength(settings.idealEdgeLength);
+			setTrajectoryStraighteningEnabled(settings.trajectoryStraighteningEnabled);
+			setGravityEnabled(settings.gravityEnabled);
+			setRepulsionEnabled(settings.repulsionEnabled);
+			setAttractionEnabled(settings.attractionEnabled);
+		};
+
 		return (
 			<div className="column">
 				<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
-				<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} posBuf={posBuf} posDims={posDims}></GraphSvg>
+				<div className="row">
+					<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} posBuf={posBuf} posDims={posDims}></GraphSvg>
+					<Config settings={{
+						bendInterval,
+						bendsEnabled,
+						timeChangeEnabled,
+						idealEdgeLength,
+						repulsionEnabled,
+						attractionEnabled,
+						trajectoryStraighteningEnabled,
+						gravityEnabled
+					}} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
+				</div>
 				<div>
 					<button onClick={start}>Start</button>
 					<button onClick={stop}>Stop</button>
