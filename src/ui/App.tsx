@@ -15,7 +15,7 @@ namespace dynnoslice.ui {
 		//SETTINGS:
 		const [bendInterval, setBendInterval] = React.useState(1);
 		const [bendsEnabled, setBendsEnabled] = React.useState(true);
-		const [timeChangeEnabled, setTimeChangeEnabled] = React.useState(true);
+		const [timeChangeEnabled, setTimeChangeEnabled] = React.useState(false);
 		const [idealEdgeLength, setIdealEdgeLength] = React.useState(1);
 		const [repulsionEnabled, setRepulsionEnabled] = React.useState(true);
 		const [attractionEnabled, setAttractionEnabled] = React.useState(true);

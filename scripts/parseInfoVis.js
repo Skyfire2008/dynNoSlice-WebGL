@@ -53,7 +53,6 @@ fs.readFile("test data/infoVis.txt").then((buf) => {
 				node.years.push(year);
 			}
 
-
 			authors.push(node);
 		}
 

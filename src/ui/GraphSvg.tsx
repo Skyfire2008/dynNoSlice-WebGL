@@ -53,13 +53,6 @@ namespace dynnoslice.ui {
 		 * Ids of nodes present at given timestamp
 		 */
 		const nodeIds = React.useMemo(() => {
-			/*const result = new Set<number>();
-			for (const edge of edges) {
-				result.add(edge.from);
-				result.add(edge.to);
-			}
-
-			return result;*/
 
 			const result: Array<number> = [];
 			if (network == null) {

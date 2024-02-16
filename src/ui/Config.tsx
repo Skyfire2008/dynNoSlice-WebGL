@@ -59,11 +59,11 @@ namespace dynnoslice.ui {
 				</div>
 				<div className="setting">
 					<label>Bend time interval:</label>
-					<input className="num-input" defaultValue={settings.bendInterval} onBlur={onNumberChange("bendInterval", (value) => value <= 0)}></input>
+					<input className="num-input" defaultValue={settings.bendInterval} disabled={!settings.bendsEnabled} onBlur={onNumberChange("bendInterval", (value) => value <= 0)}></input>
 				</div>
 				<div className="setting">
 					<label>Enable bend time change:</label>
-					<input type="checkbox" checked={settings.timeChangeEnabled} onChange={onCheck("timeChangeEnabled")}></input>
+					<input type="checkbox" disabled={!settings.bendsEnabled} checked={settings.timeChangeEnabled} onChange={onCheck("timeChangeEnabled")}></input>
 				</div>
 				<div className="setting">
 					<label>Enable repulsion:</label>

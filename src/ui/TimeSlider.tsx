@@ -13,7 +13,8 @@ namespace dynnoslice.ui {
 		const frameId = React.useRef(0);
 
 		const inputStep = React.useMemo(() => {
-			return (max - min) / 1280;
+			const regular = (max - min) / 1280;
+			return Math.min(1, regular);
 		}, [min, max]);
 
 		const onInput = (e: React.ChangeEvent<HTMLInputElement>) => {
