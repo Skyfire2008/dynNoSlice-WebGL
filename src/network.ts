@@ -32,8 +32,6 @@ namespace dynnoslice {
 		public startTime: number;
 		public endTime: number;
 
-		//TODO: add node trajectory data
-
 		constructor(network: Network) {
 			this.nodes = network.nodes;
 			this.edges = network.edges;
@@ -45,24 +43,6 @@ namespace dynnoslice {
 				this.startTime = Math.min(this.startTime, edge.intervals[0][0]);
 				this.endTime = Math.max(this.endTime, edge.intervals[edge.intervals.length - 1][1]);
 			}
-
-			//TODO: generate interval trees for nodes and edges
-		}
-
-		/**
-		 * Updates node trajectory positions using data from texture
-		 * @param buf data from positions texture
-		 */
-		public updatePositions(buf: Float32Array) {
-			//INFO: probably not necessary, graph-svg component should handle positions
-		}
-
-		/**
-		 * Generates a slice to be visualized
-		 * @param time moment at which the timeslice occurs
-		 */
-		public toSlice(time: number) {
-			//TODO: implement
 		}
 
 		/**

@@ -6,8 +6,6 @@ in vec2 texCoords;
 out vec4 fragColor;
 
 uniform sampler2D posTex;
-uniform sampler2D intervalsTex;
-uniform mediump usampler2D adjacenciesTex;
 uniform sampler2D newAdjTex;
 
 uniform float idealEdgeLength;
@@ -23,7 +21,11 @@ struct Interval {
 };
 
 bool intervalsIntersect(Interval a, Interval b) {
-	return a.t1 > b.t0 && b.t1 < a.t0;
+	return a.t0 < b.t1 && b.t0 < a.t1;
+}
+
+Interval getIntervalIntersection(Interval a, Interval b) {
+	return Interval(max(a.t0, b.t0), min(a.t1, b.t1));
 }
 
 /**
@@ -95,18 +97,12 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 			//if point exists within adjacent node's current segment, apply force
 			if(prevAdjPos.z <= pos.z && pos.z <= adjPos.z) {
 
-				//INFO: debug
-				//return vec3(adjNode, j, 0.0f);
-
 				vec4 otherPos = vec4(0.0f);
 				if(adjPos.z - prevAdjPos.z > 0.0f) {
 					otherPos = mix(prevAdjPos, adjPos, (pos.z - prevAdjPos.z) / (adjPos.z - prevAdjPos.z));
 				} else {
 					otherPos = adjPos;
 				}
-
-				//INFO: debug
-				///return otherPos.xyz;
 
 				vec3 force = otherPos.xyz - pos.xyz;
 				force *= length(force) / idealEdgeLength;
@@ -122,9 +118,143 @@ vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 	return resultForce;
 }
 
+/*
+	Gets the position of node at first or last point of time interval
+*/
+vec3 getPosInInterval(Interval interval, vec4 a, vec4 b, bool first) {
+	float mult;
+
+	if(first) {
+		mult = (interval.t0 - a.z) / (b.z - a.z);
+	} else {
+		mult = (interval.t1 - a.z) / (b.z - a.z);
+	}
+
+	return mix(a, b, mult).xyz;
+}
+
 vec3 getNewAttractionForce(ivec2 pixelCoords, vec4 pos) {
 	int maxPosNum = textureSize(posTex, 0).x;
+
 	vec3 resultForce = vec3(0.0f);
+
+	//get previous and next positions
+	vec4 prevPos = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
+	bool hasPrev = pixelCoords.x > 0 && prevPos.a != 0.0f;
+	Interval prevInterval;
+	if(hasPrev) {
+		prevInterval = Interval(prevPos.z, pos.z);
+	}
+
+	bool hasNext = pixelCoords.x < maxPosNum && pos.a != 0.0f;
+	vec4 nextPos;
+	Interval nextInterval;
+	if(hasNext) {
+		nextPos = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
+		nextInterval = Interval(pos.z, nextPos.z);
+	}
+
+	//get number of adjacencies
+	int adjNum = int(texelFetch(newAdjTex, ivec2(0, pixelCoords.y), 0).r);
+
+	//for every adjacency...
+	for(int i = 0; i < adjNum; i++) {
+		//get interval for this adjacency
+		vec4 adjacency = texelFetch(newAdjTex, ivec2(i + 1, pixelCoords.y), 0);
+		Interval curInterval = Interval(adjacency.y, adjacency.z);
+		int adjNodeId = int(adjacency.x);
+
+		//if adjacency's interval intersects with prev interval...
+		if(hasPrev && intervalsIntersect(curInterval, prevInterval)) {
+
+			Interval interval = getIntervalIntersection(curInterval, prevInterval);
+
+			//go through positions of adjacent node
+			vec4 prevAdjPos = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			for(int i = 0; i < maxPosNum; i++) {
+				vec4 adjPos = texelFetch(posTex, ivec2(i, adjNodeId), 0);
+
+				//if adjacent node's positions have ended, stop
+				if(adjPos.a == 0.0f && prevAdjPos.a == 0.0f) {
+					break;
+				}
+
+				//if previous positions is an end, continue
+				if(prevAdjPos.a == 0.0f) {
+					prevAdjPos = adjPos;
+					continue;
+				}
+
+				//if intervals doesn't intersect, skip
+				Interval adjInterval = Interval(prevAdjPos.z, adjPos.z);
+				if(!intervalsIntersect(adjInterval, interval)) {
+					prevAdjPos = adjPos;
+					continue;
+				}
+
+				//if all checks passed, calculate my and adjacent node's first positions in interval
+				Interval intersection = getIntervalIntersection(adjInterval, interval);
+				vec3 myPos = getPosInInterval(intersection, prevPos, pos, false);
+				vec3 otherPos = getPosInInterval(intersection, prevAdjPos, adjPos, false);
+
+				vec3 force = otherPos - myPos;
+
+				//scale force according to the paper
+				force *= length(force) / idealEdgeLength;
+				float closenessMult = 1.0f - (prevInterval.t1 - intersection.t1) / (prevInterval.t1 - prevInterval.t0);
+				float edgeRatio = (intersection.t1 - intersection.t0) / (prevInterval.t1 - prevInterval.t0);
+				force *= closenessMult * edgeRatio;
+				resultForce += force;
+
+				prevAdjPos = adjPos;
+			}
+		}
+
+		//if adjacnecy's interval intersects with next interval...
+		if(hasNext && intervalsIntersect(curInterval, nextInterval)) {
+			Interval interval = getIntervalIntersection(curInterval, nextInterval);
+
+			//go through positions of adjacent node
+			vec4 prevAdjPos = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			for(int i = 0; i < maxPosNum; i++) {
+				vec4 adjPos = texelFetch(posTex, ivec2(i, adjNodeId), 0);
+
+				//if adjacent node's positions have ended, stop
+				if(adjPos.a == 0.0f && prevAdjPos.a == 0.0f) {
+					break;
+				}
+
+				//if previous positions is an end, continue
+				if(prevAdjPos.a == 0.0f) {
+					prevAdjPos = adjPos;
+					continue;
+				}
+
+				//if intervals doesn't intersect, skip
+				Interval adjInterval = Interval(prevAdjPos.z, adjPos.z);
+				if(!intervalsIntersect(adjInterval, interval)) {
+					prevAdjPos = adjPos;
+					continue;
+				}
+
+				//if all checks passed, calculate my and adjacent node's first positions in interval
+				Interval intersection = getIntervalIntersection(adjInterval, interval);
+				vec3 myPos = getPosInInterval(intersection, pos, nextPos, true);
+				vec3 otherPos = getPosInInterval(intersection, prevAdjPos, adjPos, true);
+
+				vec3 force = otherPos - myPos;
+
+				//scale force according to the paper
+				force *= length(force) / idealEdgeLength;
+				float closenessMult = 1.0f - (intersection.t0 - nextInterval.t0) / (nextInterval.t1 - nextInterval.t0);
+				float edgeRatio = (intersection.t1 - intersection.t0) / (nextInterval.t1 - nextInterval.t0);
+				force *= closenessMult * edgeRatio;
+				resultForce += force;
+
+				prevAdjPos = adjPos;
+			}
+		}
+	}
 
 	return resultForce;
 }
@@ -216,7 +346,7 @@ void main() {
 
 	//add attraction force 
 	if(attractionEnabled) {
-		totalForce += getAttractionForce(pixelCoords, pos);
+		totalForce += getNewAttractionForce(pixelCoords, pos);
 	}
 
 	//add gravity
