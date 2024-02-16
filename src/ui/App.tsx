@@ -21,6 +21,7 @@ namespace dynnoslice.ui {
 		const [attractionEnabled, setAttractionEnabled] = React.useState(true);
 		const [trajectoryStraighteningEnabled, setTrajectoryStraighteningEnabled] = React.useState(true);
 		const [gravityEnabled, setGravityEnabled] = React.useState(true);
+		const [mentalMapEnabled, setMentalMapEnabled] = React.useState(true);
 
 		const ctx = React.useRef<WebGL2RenderingContext>(null);
 		const posShader = React.useRef<graphics.Shader>(null); //updates trajectories
@@ -143,6 +144,7 @@ namespace dynnoslice.ui {
 			posShader.current.setBool("attractionEnabled", attractionEnabled);
 			posShader.current.setBool("trajectoryStraighteningEnabled", trajectoryStraighteningEnabled);
 			posShader.current.setBool("gravityEnabled", gravityEnabled);
+			posShader.current.setBool("mentalMapEnabled", mentalMapEnabled);
 
 			let startTime = window.performance.now();
 
@@ -196,6 +198,7 @@ namespace dynnoslice.ui {
 			setGravityEnabled(settings.gravityEnabled);
 			setRepulsionEnabled(settings.repulsionEnabled);
 			setAttractionEnabled(settings.attractionEnabled);
+			setMentalMapEnabled(settings.mentalMapEnabled);
 		};
 
 		return (
@@ -211,7 +214,8 @@ namespace dynnoslice.ui {
 						repulsionEnabled,
 						attractionEnabled,
 						trajectoryStraighteningEnabled,
-						gravityEnabled
+						gravityEnabled,
+						mentalMapEnabled
 					}} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
 				</div>
 				<div>

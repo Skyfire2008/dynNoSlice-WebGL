@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+#define PI 3.1415926535897932384626433832795
+
 in vec2 texCoords;
 
 out vec4 fragColor;
@@ -14,6 +16,7 @@ uniform bool repulsionEnabled;
 uniform bool attractionEnabled;
 uniform bool trajectoryStraighteningEnabled;
 uniform bool gravityEnabled;
+uniform bool mentalMapEnabled;
 
 struct Interval {
 	float t0;
@@ -26,6 +29,12 @@ bool intervalsIntersect(Interval a, Interval b) {
 
 Interval getIntervalIntersection(Interval a, Interval b) {
 	return Interval(max(a.t0, b.t0), min(a.t1, b.t1));
+}
+
+float atan2(float y, float x) {
+	//taken from https://stackoverflow.com/a/26070411
+	bool s = abs(x) > abs(y);
+	return mix(PI / 2.0f - atan(x, y), atan(y, x), s);
 }
 
 /**
@@ -266,23 +275,51 @@ vec3 getGravityForce(vec4 pos) {
 }
 
 vec3 getTrajectoryStraighteningForce(ivec2 pixelCoords, vec4 pos) {
-	//if node is last in segment, skip
-	if(pos.a == 0.0f) {
-		return vec3(0.0f);
-	}
-
 	vec4 prev = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
-
-	//if node is first in segment, skip
-	if(prev.a == 0.0f) {
-		return vec3(0.0f);
-	}
-
 	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
+	vec3 center;
 
-	vec3 center = (pos.xyz + next.xyz + prev.xyz) / 3.0f;
+	//if node is last in segment
+	if(pos.a == 0.0f) {
+		center = (pos.xyz + prev.xyz) / 2.0f;
+	} else if(prev.a == 0.0f) {
+		//if node is first in segment
+		center = (pos.xyz + next.xyz) / 2.0f;
+	} else {
+		center = (pos.xyz + next.xyz + prev.xyz) / 3.0f;
+	}
 
 	return center - pos.xyz;
+}
+
+vec3 getMentalMapForce(ivec2 pixelCoords, vec4 pos) {
+	vec4 prev = texelFetch(posTex, pixelCoords - ivec2(1, 0), 0);
+	vec4 next = texelFetch(posTex, pixelCoords + ivec2(1, 0), 0);
+
+	vec3 force = vec3(0.0f);
+
+	//if node is not last
+	if(pos.a != 0.0f) {
+		vec3 diff = (next - pos).xyz;
+		float length = length(diff.xy);
+		float angle = abs(atan2(length, diff.z));
+
+		force += diff * angle / (PI / 2.0f - angle);
+	}
+
+	//if node is not first
+	if(prev.a != 0.0f) {
+		vec3 diff = (prev - pos).xyz;
+		diff.z *= -1.0f; //time difference is negative after subtraction, make it positive again
+		float length = length(diff.xy);
+		float angle = abs(atan2(length, diff.z));
+
+		force += diff * angle / (PI / 2.0f - angle);
+	}
+
+	force.z = 0.0f;
+
+	return force;
 }
 
 /**
@@ -357,6 +394,11 @@ void main() {
 	//add trajectory smoothing force
 	if(trajectoryStraighteningEnabled) {
 		totalForce += getTrajectoryStraighteningForce(pixelCoords, pos);
+	}
+
+	//add mental map preservation force
+	if(mentalMapEnabled) {
+		totalForce += getMentalMapForce(pixelCoords, pos);
 	}
 
 	Interval interval = getValidInterval(pixelCoords, pos);

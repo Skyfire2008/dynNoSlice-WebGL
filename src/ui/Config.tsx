@@ -10,6 +10,7 @@ namespace dynnoslice.ui {
 		attractionEnabled: boolean;
 		gravityEnabled: boolean;
 		trajectoryStraighteningEnabled: boolean;
+		mentalMapEnabled: boolean;
 		[key: string]: any;
 	}
 
@@ -79,6 +80,10 @@ namespace dynnoslice.ui {
 				<div className="setting">
 					<label>Enable trajectory straightening:</label>
 					<input type="checkbox" checked={settings.trajectoryStraighteningEnabled} onChange={onCheck("trajectoryStraighteningEnabled")}></input>
+				</div>
+				<div className="setting">
+					<label>Enable mental map preservation:</label>
+					<input type="checkbox" checked={settings.mentalMapEnabled} onChange={onCheck("mentalMapEnabled")}></input>
 				</div>
 				<button onClick={onReload}>Reload dataset</button>
 			</div>
