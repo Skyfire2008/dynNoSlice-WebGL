@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"moduleResolution": "node",
+		"outFile": "../../bin/worker/worker.js",
+		"target": "ES2017",
+		"rootDir": "../",
+		"module": "none"
+	},
+	"compileOnSave": true,
+	"include": [
+		"../math/math.ts",
+		"../math/Vec2.ts",
+		"../util/util.ts",
+		"../network.ts",
+		"worker.ts",
+	],
+	"exclude": [
+		"node_modules"
+	]
+}

@@ -6,10 +6,10 @@
 		"react-dom": "latest",
 		"@types/react": "latest",
 		"@types/react-dom": "latest",
-		"typescript": "v4.4.4"
+		"typescript": "v5.3.3"
 	},
 	"scripts": {
-		"compile": "tsc",
+		"compile": "tsc && cd src/worker && tsc",
 		"copy": "node scripts/copy.js",
 		"build": "npm run compile && npm run copy"
 	}
