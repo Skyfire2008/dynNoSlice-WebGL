@@ -4,6 +4,7 @@ namespace dynnoslice.ui {
 		const [network, setNetwork] = React.useState<ExtNetwork>(null);
 		const [posBuf, setPosBuf] = React.useState<Float32Array>(null);
 		const [posDims, setPosDims] = React.useState<math.Dims>(null);
+		const thread = React.useRef<Worker>(null);
 
 		const [timeSliderMin, setTimeSliderMin] = React.useState(0);
 		const [timeSliderMax, setTimeSliderMax] = React.useState(1);
@@ -45,6 +46,18 @@ namespace dynnoslice.ui {
 			posShader.current = new graphics.Shader(shaders.drawQuadVert, shaders.updatePositionsFrag);
 			quadShader.current = new graphics.Shader(shaders.drawQuadVert, shaders.drawQuadFrag);
 			quadShader.current.use();
+
+			//setup worker
+			thread.current = new Worker("worker/worker.js");
+			thread.current.addEventListener("message", (message) => {
+				//TODO: process messages from the thread
+				console.log(message);
+			});
+			thread.current.postMessage({ type: worker.MessageType.InitialSetup });
+
+			return () => {
+				thread.current.terminate();
+			};
 		}, []);
 
 		/**

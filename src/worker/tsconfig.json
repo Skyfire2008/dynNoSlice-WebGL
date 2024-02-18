@@ -8,11 +8,14 @@
 	},
 	"compileOnSave": true,
 	"include": [
-		"../math/math.ts",
-		"../math/Vec2.ts",
+		"../graphics/*",
+		"../math/*"
+	],
+	"files": [
 		"../util/util.ts",
 		"../network.ts",
-		"worker.ts",
+		"common.ts",
+		"worker.ts"
 	],
 	"exclude": [
 		"node_modules"
