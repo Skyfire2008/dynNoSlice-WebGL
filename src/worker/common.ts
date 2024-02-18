@@ -2,16 +2,41 @@ namespace worker {
 
 	export enum MessageType {
 		InitialSetup = "InitialSetup",
-		Input = "Input",
-		Settings = "Settings",
-		Step = "Step", //
-		Request = "Request",
+		InitialSetupDone = "InitialSetupDone",
 
-		Done = "Done",
+		Input = "Input",
+		InputDone = "InputDone",
+
+		Settings = "Settings",
+		SettingsDone = "SettingsDone",
+
+		Reload = "Reload",
+		ReloadDone = "ReloadDone",
+
+		Step = "Step",
+		Done = "Done"
 	}
 
 	export interface Message {
 		type: MessageType;
 		payload?: any;
 	}
+}
+
+namespace dynnoslice.ui {
+
+	export interface Settings {
+		bendInterval: number;
+		bendsEnabled: boolean;
+		timeChangeEnabled: boolean;
+		idealEdgeLength: number;
+
+		repulsionEnabled: boolean;
+		attractionEnabled: boolean;
+		gravityEnabled: boolean;
+		trajectoryStraighteningEnabled: boolean;
+		mentalMapEnabled: boolean;
+		[key: string]: any;
+	}
+
 }

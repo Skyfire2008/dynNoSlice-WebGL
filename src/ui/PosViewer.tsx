@@ -5,8 +5,9 @@ namespace dynnoslice.ui {
 
 	interface PosViewerProps {
 		network: ExtNetwork;
-		posBuf: Float32Array;
-		posDims: math.Dims;
+		posBufObserver: util.Observer<Float32Array>;
+		//TODO: hack
+		posDims: { current: math.Dims };
 		timestamp: number;
 		width: number;
 		height: number;
@@ -135,15 +136,22 @@ namespace dynnoslice.ui {
 		);
 	};
 
-	export const PosViewer: React.FC<PosViewerProps> = ({ network, posBuf, posDims, timestamp, width, height: maxHeight }) => {
+	export const PosViewer: React.FC<PosViewerProps> = ({ network, posBufObserver, posDims, timestamp, width, height: maxHeight }) => {
 
-		const trajectories = React.useMemo(() => {
-			if (posBuf != null) {
-				return util.getTrajectories(posBuf, posDims.width);
-			} else {
-				return []
-			}
-		}, [posBuf, posDims]);
+		const [trajectories, setTrajectories] = React.useState<Array<util.Trajectory>>([]);
+
+		//subscribe to observer
+		React.useEffect(() => {
+			const onPosBufChange = (posBuf: Float32Array) => {
+				if (posBuf != null) {
+					setTrajectories(util.getTrajectories(posBuf, posDims.current.width));
+				}
+			};
+
+			posBufObserver.subscribe(onPosBufChange);
+
+			return () => posBufObserver.unsubscribe(onPosBufChange);
+		}, []);
 
 		const nodeProps = React.useMemo(() => {
 			const result: Array<NodeViewerProps> = [];
@@ -166,7 +174,7 @@ namespace dynnoslice.ui {
 		return (
 			<div style={{ width, maxHeight: maxHeight, overflow: "auto" }}>
 				<div className="column">
-					{nodeProps.map((props) => <NodeViewer {...props} timestamp={timestamp} posBufWidth={posDims.width - 1} startTime={network.startTime} endTime={network.endTime}></NodeViewer>)}
+					{nodeProps.map((props) => <NodeViewer {...props} timestamp={timestamp} posBufWidth={posDims.current.width - 1} startTime={network.startTime} endTime={network.endTime}></NodeViewer>)}
 				</div>
 			</div>
 		);

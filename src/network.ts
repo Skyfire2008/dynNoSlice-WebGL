@@ -48,9 +48,10 @@ namespace dynnoslice {
 		/**
 		 * Generates positions buffer
 		 * @param timeStep time step at which new trajectory points are created
+		 * @param useSharedMemory if set to truee will allocate and return a SharedArrayBuffer
 		 * @returns [buffer, dimensions]
 		 */
-		public genPositionsBuffer(timeStep: number): [Float32Array, math.Dims] {
+		public genPositionsBuffer(timeStep: number, useSharedMemory?: boolean): [Float32Array, math.Dims] {
 			//data is stored as R: x, G: y, B: time, A: 0.0 if point is final in trajectory segment, 1.0 otherwise
 			//row Y stores trajectories of node Y
 			const trajectories: Array<Array<Color>> = [];
@@ -96,7 +97,14 @@ namespace dynnoslice {
 			}
 
 			//write the arrays into the buffer
-			const buffer = new Float32Array(4 * width * this.nodes.length);
+			let buffer: Float32Array = null;
+			if (useSharedMemory) {
+				const memory = new SharedArrayBuffer(4 * width * this.nodes.length * Float32Array.BYTES_PER_ELEMENT);
+				buffer = new Float32Array(memory);
+			} else {
+				buffer = new Float32Array(4 * width * this.nodes.length);
+			}
+
 			let rowStart = 0;
 			for (const trajectory of trajectories) {
 				let pos = 0;

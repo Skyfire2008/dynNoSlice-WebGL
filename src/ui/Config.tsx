@@ -1,19 +1,5 @@
 namespace dynnoslice.ui {
 
-	export interface Settings {
-		bendInterval: number;
-		bendsEnabled: boolean;
-		timeChangeEnabled: boolean;
-		idealEdgeLength: number;
-
-		repulsionEnabled: boolean;
-		attractionEnabled: boolean;
-		gravityEnabled: boolean;
-		trajectoryStraighteningEnabled: boolean;
-		mentalMapEnabled: boolean;
-		[key: string]: any;
-	}
-
 	interface ConfigProps {
 		settings: Settings;
 		onSettingsChange: (settings: Settings) => void;

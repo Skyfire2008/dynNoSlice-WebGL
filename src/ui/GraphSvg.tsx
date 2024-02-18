@@ -4,12 +4,14 @@ namespace dynnoslice.ui {
 		width: number;
 		height: number;
 		network: ExtNetwork;
-		posBuf: Float32Array;
-		posDims: math.Dims;
+		posBufObserver: util.Observer<Float32Array>;
+		posDims: { current: math.Dims };
 		timestamp: number;
 	}
 
-	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, posBuf, posDims, timestamp }) => {
+	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, posBufObserver, posDims, timestamp }) => {
+
+		const [nodePositions, setNodePositions] = React.useState(new Map<number, math.Vec2>());
 
 		const svgRef = React.useRef<SVGSVGElement>();
 		const [pan, setPan] = React.useState(new math.Vec2([-width / 2, -height / 2]));
@@ -53,7 +55,6 @@ namespace dynnoslice.ui {
 		 * Ids of nodes present at given timestamp
 		 */
 		const nodeIds = React.useMemo(() => {
-
 			const result: Array<number> = [];
 			if (network == null) {
 				//skip if network is null
@@ -69,21 +70,6 @@ namespace dynnoslice.ui {
 
 			return result;
 		}, [network, timestamp]);
-
-		/**
-		 * Maps node ids to their positions
-		 */
-		const nodePositions = React.useMemo(() => {
-			const result = new Map<number, math.Vec2>();
-			for (const id of nodeIds) {
-				const pos = util.findPosition(posBuf, posDims.width, id, timestamp);
-				pos.sub(pan);
-				pos.mult(1 / zoom);
-				result.set(id, pos);
-			}
-
-			return result;
-		}, [nodeIds, posBuf, pan, zoom]);
 
 		const nodes = React.useMemo(() => {
 			const result: Array<GraphNodeProps> = [];
@@ -147,9 +133,38 @@ namespace dynnoslice.ui {
 			return () => svgRef.current.removeEventListener("wheel", onWheel);
 		});
 
+		//subsribe to position buffer observer
+		React.useEffect(() => {
+			const onPosBufChange = (posBuf: Float32Array) => {
+				const nodePositions = new Map<number, math.Vec2>();
+				for (const id of nodeIds) {
+					const pos = util.findPosition(posBuf, posDims.current.width, id, timestamp);
+					pos.sub(pan);
+					pos.mult(1 / zoom);
+					nodePositions.set(id, pos);
+				}
+
+				setNodePositions(nodePositions);
+			};
+
+			posBufObserver.subscribe(onPosBufChange);
+
+			return () => posBufObserver.unsubscribe(onPosBufChange);
+		}, [nodeIds, timestamp, pan, zoom]);
+
+		//TODO: hack
+		const getPos = (id: number) => {
+			const result = nodePositions.get(id);
+			if (result != null) {
+				return result;
+			} else {
+				return new math.Vec2([0, 0]);
+			}
+		}
+
 		return (
 			<svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} onMouseDown={onMouseDown} onMouseUp={onMouseUp} onMouseMove={onMouseMove}>
-				{edges.map((edge) => <GraphEdge pos1={nodePositions.get(edge.from)} pos2={nodePositions.get(edge.to)}></GraphEdge>)}
+				{edges.map((edge) => <GraphEdge pos1={getPos(edge.from)} pos2={getPos(edge.to)}></GraphEdge>)}
 				{nodes.map((props) => <GraphNode {...props}></GraphNode>)}
 			</svg>
 		);

@@ -1,6 +1,6 @@
 namespace dynnoslice.util {
 
-	type Sub<T> = (value: T) => {};
+	type Sub<T> = (value: T) => void;
 
 	export class Observer<T>{
 		private value: T;
