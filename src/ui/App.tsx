@@ -137,7 +137,7 @@ namespace dynnoslice.ui {
 					<button onClick={step}>Step</button>
 				</div>
 				<TimeSlider min={timeSliderMin} max={timeSliderMax} value={timestamp} onChange={onSliderChange}></TimeSlider>
-				{/*<PosViewer posBufObserver={posBufObserver.current} posDims={posDims} network={network} timestamp={timestamp} width={1800} height={200}></PosViewer>*/}
+				<PosViewer posDims={posDims} network={network} trajectories={trajectories} timestamp={timestamp} width={1800} height={200}></PosViewer>
 			</div >);
 	};
 }

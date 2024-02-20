@@ -5,7 +5,7 @@ namespace dynnoslice.ui {
 
 	interface PosViewerProps {
 		network: ExtNetwork;
-		posBufObserver: util.Observer<Float32Array>;
+		trajectories: Array<util.Trajectory>
 		//TODO: hack
 		posDims: { current: math.Dims };
 		timestamp: number;
@@ -26,51 +26,7 @@ namespace dynnoslice.ui {
 
 	const NodeViewer: React.FC<NodeViewerProps> = ({ label, trajectory, num, timestamp, posBufWidth, startTime, endTime }) => {
 
-		const pos = React.useMemo(() => {
-
-			const binSearch = (low: number, index: number, high: number): math.Vec2 => {
-				const current = trajectory[index];
-				const next = (index + 1) != trajectory.length ? trajectory[index + 1] : trajectory[index];
-
-				//if timestamp is inside current interval...
-				if (current.t <= timestamp && timestamp <= next.t) {
-					if (current.final) {
-						return new math.Vec2([NaN, NaN]);
-					} else {
-						const interval = next.t - current.t;
-
-						//special case when current is the final bend in trajectory
-						if (interval <= 0) {
-							return new math.Vec2([current.x, current.y]);
-						}
-
-						const mult = (timestamp - current.t) / interval;
-						const x = math.lerp(current.x, next.x, mult);
-						const y = math.lerp(current.y, next.y, mult);
-						return new math.Vec2([x, y]);
-					}
-				} else {
-					if (timestamp < current.t) {
-						const newIndex = Math.floor((low + index) / 2);
-						if (newIndex != index) {
-							return binSearch(low, newIndex, index);
-						} else {
-							return new math.Vec2([NaN, NaN]);
-						}
-					} else {
-						const newIndex = Math.floor((index + high) / 2);
-						if (newIndex != index) {
-							return binSearch(index, newIndex, high);
-						} else {
-							return new math.Vec2([NaN, NaN]);
-						}
-					}
-				}
-			};
-
-			return binSearch(0, Math.floor(trajectory.length / 2), trajectory.length);
-
-		}, [trajectory, timestamp]);
+		const pos = React.useMemo(() => util.findPosition(trajectory, timestamp), [trajectory, timestamp]);
 
 		const rectangles = React.useMemo(() => {
 			const result: Array<JSX.Element> = [];
@@ -81,7 +37,7 @@ namespace dynnoslice.ui {
 
 			const rectWidth = svgWidth / posBufWidth;
 			for (let i = 0; i < posBufWidth; i++) {
-				result.push(<rect x={i * rectWidth} y={0} width={rectWidth} height={svgHeight} fill={i % 2 == 0 ? "transparent" : "#00000020"} stroke="none"></rect>);
+				result.push(<rect x={i * rectWidth} y={0} width={rectWidth} height={svgHeight} fill={i % 2 == 0 ? "transparent" : "#00000020"} stroke="none" key={i}></rect>);
 			}
 			return result;
 
@@ -101,7 +57,7 @@ namespace dynnoslice.ui {
 
 				const x1 = svgWidth * (current.t - startTime) / totalTime;
 				const x2 = svgWidth * (next.t - startTime) / totalTime;
-				result.push(<line x1={x1} y1={svgHeight / 2} x2={x2} y2={svgHeight / 2} stroke={next.t > current.t ? "black" : "red"} strokeWidth={2}></line>);
+				result.push(<line x1={x1} y1={svgHeight / 2} x2={x2} y2={svgHeight / 2} stroke={next.t > current.t ? "black" : "red"} strokeWidth={2} key={i}></line>);
 			}
 
 			for (let i = 0; i < trajectory.length; i++) {
@@ -109,7 +65,7 @@ namespace dynnoslice.ui {
 
 				const x = svgWidth * (point.t - startTime) / totalTime;
 				result.push(
-					<circle cx={x} cy={svgHeight / 2} r={4} fill={point.final ? "#ffffff40" : "#00000040"} stroke="black">
+					<circle cx={x} cy={svgHeight / 2} r={4} fill={point.final ? "#ffffff40" : "#00000040"} stroke="black" key={i + trajectory.length - 1}>
 						<title>x:{point.x} y:{point.y}</title>
 					</circle>
 				);
@@ -127,36 +83,23 @@ namespace dynnoslice.ui {
 		return (
 			<div className="row" style={{ backgroundColor: num % 2 == 0 ? "lightcyan" : "white" }}>
 				<div className="pos-viewer-label">{label}</div>
-				<div className="pos-viewer-num">{isNaN(pos.x) ? "N/A" : pos.x}</div>
-				<div className="pos-viewer-num">{isNaN(pos.y) ? "N/A" : pos.y}</div>
+				<div className="pos-viewer-num">{pos == null ? "N/A" : pos.x}</div>
+				<div className="pos-viewer-num">{pos == null ? "N/A" : pos.y}</div>
 				<svg width={svgWidth} height={svgHeight}>
-					{rectangles}{svgTrajectory}{timeMarker}
+					<g>{rectangles}</g>
+					<g>{svgTrajectory}</g>
+					{timeMarker}
 				</svg>
 			</div>
 		);
 	};
 
-	export const PosViewer: React.FC<PosViewerProps> = ({ network, posBufObserver, posDims, timestamp, width, height: maxHeight }) => {
-
-		const [trajectories, setTrajectories] = React.useState<Array<util.Trajectory>>([]);
-
-		//subscribe to observer
-		React.useEffect(() => {
-			const onPosBufChange = (posBuf: Float32Array) => {
-				if (posBuf != null) {
-					setTrajectories(util.getTrajectories(posBuf, posDims.current.width));
-				}
-			};
-
-			posBufObserver.subscribe(onPosBufChange);
-
-			return () => posBufObserver.unsubscribe(onPosBufChange);
-		}, []);
+	export const PosViewer: React.FC<PosViewerProps> = ({ network, trajectories, posDims, timestamp, width, height: maxHeight }) => {
 
 		const nodeProps = React.useMemo(() => {
 			const result: Array<NodeViewerProps> = [];
 
-			if (network == null) {
+			if (network == null || trajectories.length == 0) {
 				return result;
 			}
 
@@ -174,7 +117,7 @@ namespace dynnoslice.ui {
 		return (
 			<div style={{ width, maxHeight: maxHeight, overflow: "auto" }}>
 				<div className="column">
-					{nodeProps.map((props) => <NodeViewer {...props} timestamp={timestamp} posBufWidth={posDims.current.width - 1} startTime={network.startTime} endTime={network.endTime}></NodeViewer>)}
+					{nodeProps.map((props, i) => <NodeViewer {...props} timestamp={timestamp} posBufWidth={posDims.current.width - 1} startTime={network.startTime} endTime={network.endTime} key={i}></NodeViewer>)}
 				</div>
 			</div>
 		);

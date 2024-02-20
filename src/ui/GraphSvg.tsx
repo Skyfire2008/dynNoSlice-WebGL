@@ -23,6 +23,7 @@ namespace dynnoslice.ui {
 
 		//reset precomputed text boxes if network changed
 		if (network != prevNetwork.current) {
+			prevNetwork.current = network;
 			nodeTextBoxes.current.clear();
 		}
 
