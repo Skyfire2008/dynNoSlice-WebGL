@@ -82,8 +82,10 @@ const checkCopy = (src, dest) => {
 };
 
 const promises = [
-	checkCopy("node_modules/react/umd/react.production.min.js", "bin/react.production.min.js"),
-	checkCopy("node_modules/react-dom/umd/react-dom.production.min.js", "bin/react-dom.production.min.js"),
+	//checkCopy("node_modules/react/umd/react.production.min.js", "bin/react.production.min.js"),
+	//checkCopy("node_modules/react-dom/umd/react-dom.production.min.js", "bin/react-dom.production.min.js"),
+	checkCopy("node_modules/react/umd/react.development.js", "bin/react.development.js"),
+	checkCopy("node_modules/react-dom/umd/react-dom.development.js", "bin/react-dom.development.js"),
 	checkCopy("src/index.html", "bin/index.html"),
 	checkCopy("src/main.css", "bin/main.css"),
 	copyDir("src/shaders", "bin/shaders")

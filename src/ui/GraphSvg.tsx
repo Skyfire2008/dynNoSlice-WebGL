@@ -4,88 +4,83 @@ namespace dynnoslice.ui {
 		width: number;
 		height: number;
 		network: ExtNetwork;
-		posBufObserver: util.Observer<Float32Array>;
-		posDims: { current: math.Dims };
+		trajectories: Array<util.Trajectory>;
+		posDims: math.Dims;
 		timestamp: number;
 	}
 
-	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, posBufObserver, posDims, timestamp }) => {
-
-		const [nodePositions, setNodePositions] = React.useState(new Map<number, math.Vec2>());
-
-		const svgRef = React.useRef<SVGSVGElement>();
+	export const GraphSvg: React.FC<GraphSvgProps> = ({ width, height, network, trajectories, posDims, timestamp }) => {
 		const [pan, setPan] = React.useState(new math.Vec2([-width / 2, -height / 2]));
+		const [zoom, setZoom] = React.useState(1);
+		const svgRef = React.useRef<SVGSVGElement>();
 		const dragStartPos = React.useRef<math.Vec2>(null);
 		const prevPan = React.useRef(pan);
 
-		const [zoom, setZoom] = React.useState(1);
-
-		//used to check if network changed
-		const prevNetwork = React.useRef(network);
-
-		//React cannot instanly get the bounding box of an element, so it has to render it first, which cause flickering
+		//React cannot instanly get the bounding box of an element, so it has to render it first, which causes flickering
 		//to reduce the flickering, the calculated bounding boxes are stored in parent element and reused
 		const nodeTextBoxes = React.useRef(new Map<number, DOMRect>());
+		const prevNetwork = React.useRef(network);
 
 		//reset precomputed text boxes if network changed
 		if (network != prevNetwork.current) {
-			prevNetwork.current = network;
 			nodeTextBoxes.current.clear();
 		}
-		const setTextBox = (id: number, textBox: DOMRect) => {
-			nodeTextBoxes.current.set(id, textBox);
-		}
 
-		/**
-		 * Edges present at given timestamp
-		 */
-		const edges = React.useMemo(() => {
-			if (network == null) {
-				//skip if network is null
-				return [];
-			} else {
-				return network.edges.filter((edge) => {
-					return util.findInterval(edge.intervals, timestamp) != null;
-				});
+		const [baseNodePositions, presentEdges] = React.useMemo(() => {
+			const nodePosMap = new Map<number, math.Vec2>();
+
+			if (network == null || trajectories.length == 0) {
+				return [nodePosMap, []];
 			}
 
-		}, [network, timestamp]);
-
-		/**
-		 * Ids of nodes present at given timestamp
-		 */
-		const nodeIds = React.useMemo(() => {
-			const result: Array<number> = [];
-			if (network == null) {
-				//skip if network is null
-				return [];
-			} else {
-				for (let i = 0; i < network.nodes.length; i++) {
-					const node = network.nodes[i];
-					if (util.findInterval(node.intervals, timestamp) != null) {
-						result.push(i);
-					}
+			for (let i = 0; i < network.nodes.length; i++) {
+				const pos = util.findPosition(trajectories[i], timestamp);
+				if (pos != null) {
+					nodePosMap.set(i, pos);
 				}
 			}
 
-			return result;
-		}, [network, timestamp]);
+			const presentEdges: Array<Edge> = network.edges.filter((edge) => {
+				return util.findInterval(edge.intervals, timestamp) != null;
+			});
 
-		const nodes = React.useMemo(() => {
-			const result: Array<GraphNodeProps> = [];
-			for (const [id, pos] of nodePositions) {
-				result.push({
+			return [nodePosMap, presentEdges];
+		}, [trajectories, timestamp, network]);
+
+		//claculate new nodes and edges whenever baseNodePositions, pan or zoom change
+		const [nodes, edges] = React.useMemo(() => {
+			const nodes: Array<GraphNodeProps> = [];
+			const edges: Array<GraphEdgeProps> = [];
+			const tfPosMap = new Map<number, math.Vec2>();
+
+			for (const [id, pos] of baseNodePositions) {
+				//transform the position according to zoom and pan
+				const tfPos = pos.clone();
+				tfPos.sub(pan);
+				tfPos.mult(1 / zoom);
+				tfPosMap.set(id, tfPos);
+
+				nodes.push({
 					label: network.nodes[id].label,
-					pos,
+					pos: tfPos,
 					savedTextBox: nodeTextBoxes.current.get(id),
-					textBoxCallback: setTextBox.bind(null, id)
+					textBoxCallback: (textBox: DOMRect) => {
+						nodeTextBoxes.current.set(id, textBox);
+					}
 				});
 			}
 
-			return result;
-		}, [nodePositions]);
+			for (const edge of presentEdges) {
+				edges.push({
+					pos1: tfPosMap.get(edge.from),
+					pos2: tfPosMap.get(edge.to)
+				});
+			}
 
-		// mouse vent handler to pan the graph
+			return [nodes, edges];
+		}, [baseNodePositions, pan, zoom]);
+
+		// mouse event handler to pan the graph
 		const onMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
 			dragStartPos.current = new math.Vec2([e.clientX, e.clientY]);
 			prevPan.current = pan.clone();
@@ -133,39 +128,10 @@ namespace dynnoslice.ui {
 			return () => svgRef.current.removeEventListener("wheel", onWheel);
 		});
 
-		//subsribe to position buffer observer
-		React.useEffect(() => {
-			const onPosBufChange = (posBuf: Float32Array) => {
-				const nodePositions = new Map<number, math.Vec2>();
-				for (const id of nodeIds) {
-					const pos = util.findPosition(posBuf, posDims.current.width, id, timestamp);
-					pos.sub(pan);
-					pos.mult(1 / zoom);
-					nodePositions.set(id, pos);
-				}
-
-				setNodePositions(nodePositions);
-			};
-
-			posBufObserver.subscribe(onPosBufChange);
-
-			return () => posBufObserver.unsubscribe(onPosBufChange);
-		}, [nodeIds, timestamp, pan, zoom]);
-
-		//TODO: hack
-		const getPos = (id: number) => {
-			const result = nodePositions.get(id);
-			if (result != null) {
-				return result;
-			} else {
-				return new math.Vec2([0, 0]);
-			}
-		}
-
 		return (
 			<svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} onMouseDown={onMouseDown} onMouseUp={onMouseUp} onMouseMove={onMouseMove}>
-				{edges.map((edge) => <GraphEdge pos1={getPos(edge.from)} pos2={getPos(edge.to)}></GraphEdge>)}
-				{nodes.map((props) => <GraphNode {...props}></GraphNode>)}
+				{edges.map((props, i) => <GraphEdge {...props} key={i}></GraphEdge>)}
+				{nodes.map((props, i) => <GraphNode {...props} key={i}></GraphNode>)}
 			</svg>
 		);
 	};

@@ -58,59 +58,48 @@ namespace dynnoslice.util {
 		return result;
 	}
 
-	/**
-	 * Finds the position of given node in positions buffer at given time
-	 * @param positions positions buffer
-	 * @param width width of texture for positions buffer
-	 * @param id node id
-	 * @param time time stamp
-	 */
-	export const findPosition = (positions: Float32Array, width: number, id: number, time: number): math.Vec2 => {
-
+	export const findPosition = (trajectory: Trajectory, time: number) => {
 		const binSearch = (low: number, index: number, high: number): math.Vec2 => {
+			const current = trajectory[index];
+			const next = (index + 1) != trajectory.length ? trajectory[index + 1] : trajectory[index];
 
-			//console.log(low, index, high);
-
-			//memory layout in positions buffer: x, y, time, padding
-			const t0ind = index * 4 + 2;
-			const t1ind = t0ind + 4;
-
-			//if next time is lower than current, we've reached the end of trajectory, move back
-			//TODO: probably won't work in all cases
-			if (positions[t0ind] >= positions[t1ind]) {
-				return binSearch(low, Math.floor((low + index) / 2), index);
-			}
-
-			if (positions[t0ind] <= time && time <= positions[t1ind]) {
-
-				//linearly interpolate between positions in interval
-				const total = positions[t1ind] - positions[t0ind];
-				const mult = (time - positions[t0ind]) / total;
-				const x = math.lerp(positions[index * 4], positions[(index + 1) * 4], mult);
-				const y = math.lerp(positions[index * 4 + 1], positions[(index + 1) * 4 + 1], mult);
-
-				return new math.Vec2([x, y]);
-			} else {
-				if (time < positions[t0ind]) {
-					return binSearch(low, Math.floor((low + index) / 2), index);
+			//if timestamp is inside current interval...
+			if (current.t <= time && time <= next.t) {
+				if (current.final) {
+					return null;
 				} else {
-					return binSearch(index, Math.floor((index + high) / 2), high);
+					const interval = next.t - current.t;
+
+					//special case when current is the final bend in trajectory
+					if (interval <= 0) {
+						return new math.Vec2([current.x, current.y]);
+					}
+
+					const mult = (time - current.t) / interval;
+					const x = math.lerp(current.x, next.x, mult);
+					const y = math.lerp(current.y, next.y, mult);
+					return new math.Vec2([x, y]);
+				}
+			} else {
+				if (time < current.t) {
+					const newIndex = Math.floor((low + index) / 2);
+					if (newIndex != index) {
+						return binSearch(low, newIndex, index);
+					} else {
+						return null;
+					}
+				} else {
+					const newIndex = Math.floor((index + high) / 2);
+					if (newIndex != index) {
+						return binSearch(index, newIndex, high);
+					} else {
+						return null;
+					}
 				}
 			}
 		};
 
-		let low = id * width;
-		let high = (id + 1) * width;
-		let index = Math.floor((low + high) / 2);
-
-		//trajectory not always takes up the whole length low->high, in which case time is 0
-		//TODO: this will not work in all cases, instead save how many points a trajectory has been split when generating it
-		while (positions[index * 4 + 2] == 0) {
-			high = index;
-			index = Math.floor((low + high) / 2);
-		}
-
-		return binSearch(low, index, high);
+		return binSearch(0, Math.floor(trajectory.length / 2), trajectory.length);
 	};
 
 	/**

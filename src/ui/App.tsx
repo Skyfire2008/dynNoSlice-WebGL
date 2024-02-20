@@ -2,8 +2,9 @@ namespace dynnoslice.ui {
 
 	export const App = () => {
 		const [network, setNetwork] = React.useState<ExtNetwork>(null);
-		const posBufObserver = React.useRef(new util.Observer<Float32Array>());
+		const posBuf = React.useRef<Float32Array>(null);
 		const posDims = React.useRef<math.Dims>(null);
+		const [trajectories, setTrajectories] = React.useState<Array<util.Trajectory>>([]);
 
 		const thread = React.useRef<Worker>(null);
 
@@ -39,19 +40,21 @@ namespace dynnoslice.ui {
 					}
 					case (worker.MessageType.InputDone): {
 						posDims.current = e.data.payload.posDims;
-						posBufObserver.current.set(e.data.payload.posBuf);
+						posBuf.current = e.data.payload.posBuf;
+						setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
 						break;
 					}
 					case (worker.MessageType.ReloadDone): {
 						posDims.current = e.data.payload.posDims;
-						posBufObserver.current.set(e.data.payload.posBuf);
+						posBuf.current = e.data.payload.posBuf;
+						setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
 						break;
 					}
 					case (worker.MessageType.Done): {
 						if (frameId.current == null) {
 							frameId.current = requestAnimationFrame(() => {
 								frameId.current = null;
-								posBufObserver.current.notifySubscribers();
+								setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
 							});
 						}
 
@@ -84,6 +87,9 @@ namespace dynnoslice.ui {
 			const json = JSON.parse(file.contents);
 			const network = new ExtNetwork(json);
 			setNetwork(network);
+
+			//reset trajectories
+			setTrajectories([]);
 
 			//update time slider
 			setTimeSliderMin(network.startTime);
@@ -122,7 +128,7 @@ namespace dynnoslice.ui {
 			<div className="column">
 				<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
 				<div className="row">
-					<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} posBufObserver={posBufObserver.current} posDims={posDims}></GraphSvg>
+					<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} trajectories={trajectories} posDims={posDims.current}></GraphSvg>
 					<Config settings={settings} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
 				</div>
 				<div>
@@ -131,7 +137,7 @@ namespace dynnoslice.ui {
 					<button onClick={step}>Step</button>
 				</div>
 				<TimeSlider min={timeSliderMin} max={timeSliderMax} value={timestamp} onChange={onSliderChange}></TimeSlider>
-				<PosViewer posBufObserver={posBufObserver.current} posDims={posDims} network={network} timestamp={timestamp} width={1800} height={200}></PosViewer>
+				{/*<PosViewer posBufObserver={posBufObserver.current} posDims={posDims} network={network} timestamp={timestamp} width={1800} height={200}></PosViewer>*/}
 			</div >);
 	};
 }
