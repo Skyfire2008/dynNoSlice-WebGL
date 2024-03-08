@@ -19,6 +19,16 @@ namespace dynnoslice {
 		intervals: Array<Interval>;
 	}
 
+	export interface OutputNode {
+		label: string;
+		trajectories: Array<Array<{ x: number, y: number, t: number }>>;
+	}
+
+	export interface OutputNetwork {
+		nodes: Array<OutputNode>;
+		edges: Array<Edge>;
+	}
+
 	interface Color {
 		r: number;
 		g: number;

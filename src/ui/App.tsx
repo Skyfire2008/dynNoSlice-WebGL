@@ -14,6 +14,7 @@ namespace dynnoslice.ui {
 
 		const running = React.useRef(false);
 		const frameId = React.useRef<number>(null);
+		const wantExport = React.useRef(false);
 
 		//SETTINGS:
 		const [settings, setSettings] = React.useState<Settings>({
@@ -56,6 +57,11 @@ namespace dynnoslice.ui {
 								frameId.current = null;
 								setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
 							});
+						}
+
+						if (wantExport.current) {
+							exportGraph();
+							wantExport.current = false;
 						}
 
 						if (running.current == true) {
@@ -101,6 +107,39 @@ namespace dynnoslice.ui {
 			thread.current.postMessage({ type: worker.MessageType.Input, payload: json });
 		};
 
+		const exportGraph = () => {
+			const result: OutputNetwork = { nodes: [], edges: network.edges };
+			for (let i = 0; i < network.nodes.length; i++) {
+				const node: OutputNode = { label: network.nodes[i].label, trajectories: [] };
+				const trajectory = trajectories[i];
+
+				let current: Array<{ x: number, y: number, t: number }> = [];
+				for (const position of trajectory) {
+					current.push({ x: position.x, y: position.y, t: position.t });
+					if (position.final) {
+						node.trajectories.push(current);
+						current = [];
+					}
+				}
+
+				result.nodes.push(node);
+			}
+
+			const a = document.createElement("a");
+			a.download = "graph.json";
+			a.href = URL.createObjectURL(new Blob([JSON.stringify(result)]));
+			a.addEventListener("click", (e) => setTimeout(() => URL.revokeObjectURL(a.href), 1000));
+			a.click();
+		}
+
+		const onExportClick = () => {
+			if (running.current) {
+				wantExport.current = true;
+			} else {
+				exportGraph();
+			}
+		};
+
 		const step = () => {
 			thread.current.postMessage({ type: worker.MessageType.Step });
 		};
@@ -126,7 +165,10 @@ namespace dynnoslice.ui {
 
 		return (
 			<div className="column">
-				<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
+				<div className="row">
+					<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
+					<button onClick={onExportClick}>Export</button>
+				</div>
 				<div className="row">
 					<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} trajectories={trajectories} posDims={posDims.current}></GraphSvg>
 					<Config settings={settings} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
