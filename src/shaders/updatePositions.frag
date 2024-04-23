@@ -18,6 +18,8 @@ uniform bool trajectoryStraighteningEnabled;
 uniform bool gravityEnabled;
 uniform bool mentalMapEnabled;
 
+uniform float forceMultiplier;
+
 struct Interval {
 	float t0;
 	float t1;
@@ -383,7 +385,7 @@ void main() {
 
 	//add attraction force 
 	if(attractionEnabled) {
-		totalForce += getNewAttractionForce(pixelCoords, pos);
+		totalForce += 0.5f * getNewAttractionForce(pixelCoords, pos);
 	}
 
 	//add gravity
@@ -403,8 +405,15 @@ void main() {
 
 	Interval interval = getValidInterval(pixelCoords, pos);
 
+	//scale the force
+	if(forceMultiplier == 0.0f) {
+		totalForce *= 0.01f;
+	} else {
+		totalForce *= forceMultiplier;
+	}
+
 	//update position
-	pos.xyz += totalForce * 0.01f;
+	pos.xyz += totalForce;
 
 	//time correctness
 	pos.z = max(interval.t0, pos.z);

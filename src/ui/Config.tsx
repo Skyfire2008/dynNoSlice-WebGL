@@ -2,11 +2,12 @@ namespace dynnoslice.ui {
 
 	interface ConfigProps {
 		settings: Settings;
+		disabled: boolean;
 		onSettingsChange: (settings: Settings) => void;
 		onReload: () => void;
 	}
 
-	export const Config: React.FC<ConfigProps> = ({ settings, onSettingsChange, onReload }) => {
+	export const Config: React.FC<ConfigProps> = ({ settings, disabled, onSettingsChange, onReload }) => {
 
 		const onCheck = (name: string) => {
 			return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,41 +38,41 @@ namespace dynnoslice.ui {
 			<div>
 				<div className="setting">
 					<label>Ideal edge length:</label>
-					<input className="num-input" defaultValue={settings.idealEdgeLength} onBlur={onNumberChange("idealEdgeLength", (value) => value < 0)}></input>
+					<input className="num-input" defaultValue={settings.idealEdgeLength} onBlur={onNumberChange("idealEdgeLength", (value) => value < 0)} disabled={disabled}></input>
 				</div>
 				<div className="setting">
 					<label>Enabled bends:</label>
-					<input type="checkbox" checked={settings.bendsEnabled} onChange={onCheck("bendsEnabled")}></input>
+					<input type="checkbox" checked={settings.bendsEnabled} onChange={onCheck("bendsEnabled")} disabled={disabled}></input>
 				</div>
 				<div className="setting">
 					<label>Bend time interval:</label>
-					<input className="num-input" defaultValue={settings.bendInterval} disabled={!settings.bendsEnabled} onBlur={onNumberChange("bendInterval", (value) => value <= 0)}></input>
+					<input className="num-input" defaultValue={settings.bendInterval} disabled={!settings.bendsEnabled || disabled} onBlur={onNumberChange("bendInterval", (value) => value <= 0)}></input>
 				</div>
 				<div className="setting">
 					<label>Enable bend time change:</label>
-					<input type="checkbox" disabled={!settings.bendsEnabled} checked={settings.timeChangeEnabled} onChange={onCheck("timeChangeEnabled")}></input>
+					<input type="checkbox" disabled={!settings.bendsEnabled || disabled} checked={settings.timeChangeEnabled} onChange={onCheck("timeChangeEnabled")}></input>
 				</div>
 				<div className="setting">
 					<label>Enable repulsion:</label>
-					<input type="checkbox" checked={settings.repulsionEnabled} onChange={onCheck("repulsionEnabled")}></input>
+					<input type="checkbox" checked={settings.repulsionEnabled} onChange={onCheck("repulsionEnabled")} disabled={disabled}></input>
 				</div>
 				<div className="setting">
 					<label>Enable attraction:</label>
-					<input type="checkbox" checked={settings.attractionEnabled} onChange={onCheck("attractionEnabled")}></input>
+					<input type="checkbox" checked={settings.attractionEnabled} onChange={onCheck("attractionEnabled")} disabled={disabled}></input>
 				</div>
 				<div className="setting">
 					<label>Enable gravity:</label>
-					<input type="checkbox" checked={settings.gravityEnabled} onChange={onCheck("gravityEnabled")}></input>
+					<input type="checkbox" checked={settings.gravityEnabled} onChange={onCheck("gravityEnabled")} disabled={disabled}></input>
 				</div>
 				<div className="setting">
 					<label>Enable trajectory straightening:</label>
-					<input type="checkbox" checked={settings.trajectoryStraighteningEnabled} onChange={onCheck("trajectoryStraighteningEnabled")}></input>
+					<input type="checkbox" checked={settings.trajectoryStraighteningEnabled} onChange={onCheck("trajectoryStraighteningEnabled")} disabled={disabled}></input>
 				</div>
 				<div className="setting">
 					<label>Enable mental map preservation:</label>
-					<input type="checkbox" checked={settings.mentalMapEnabled} onChange={onCheck("mentalMapEnabled")}></input>
+					<input type="checkbox" checked={settings.mentalMapEnabled} onChange={onCheck("mentalMapEnabled")} disabled={disabled}></input>
 				</div>
-				<button onClick={onReload}>Reload dataset</button>
+				<button onClick={onReload} disabled={disabled}>Reload dataset</button>
 			</div>
 		);
 	};

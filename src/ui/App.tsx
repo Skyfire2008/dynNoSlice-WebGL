@@ -15,6 +15,8 @@ namespace dynnoslice.ui {
 		const running = React.useRef(false);
 		const frameId = React.useRef<number>(null);
 		const wantExport = React.useRef(false);
+		const [experimentIterations, setExperimentIterations] = React.useState(100);
+		const [experimentRunning, setExperimentRunning] = React.useState(false);
 
 		//SETTINGS:
 		const [settings, setSettings] = React.useState<Settings>({
@@ -153,6 +155,10 @@ namespace dynnoslice.ui {
 			running.current = false;
 		};
 
+		const runExperiment = () => {
+			setExperimentRunning(true);
+		};
+
 		const onSliderChange = (time: number) => {
 			setTimestamp(time);
 		};
@@ -166,17 +172,24 @@ namespace dynnoslice.ui {
 		return (
 			<div className="column">
 				<div className="row">
-					<FileUpload accept=".json" label="Select graph file" callback={onFileInput}></FileUpload>
-					<button onClick={onExportClick}>Export</button>
+					<FileUpload accept=".json" label="Select graph file" callback={onFileInput} disabled={experimentRunning}></FileUpload>
+					<button onClick={onExportClick} disabled={experimentRunning}>Export</button>
 				</div>
 				<div className="row">
 					<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} trajectories={trajectories} posDims={posDims.current}></GraphSvg>
-					<Config settings={settings} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
+					<Config settings={settings} disabled={experimentRunning} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
 				</div>
-				<div>
-					<button onClick={start}>Start</button>
-					<button onClick={stop}>Stop</button>
-					<button onClick={step}>Step</button>
+				<div className="runControls">
+					<div>
+						<button onClick={start} disabled={experimentRunning}>Start</button>
+						<button onClick={stop} disabled={experimentRunning}>Stop</button>
+						<button onClick={step} disabled={experimentRunning}>Step</button>
+					</div>
+					<div>
+						<label htmlFor="expIterInput">Experiment iterations:</label>
+						<input id="expIterInput" type="number" className="num-input" value={experimentIterations} onChange={(e) => setExperimentIterations(e.target.valueAsNumber)}></input>
+						<button onClick={runExperiment} disabled={experimentRunning}>Run experiment</button>
+					</div>
 				</div>
 				<TimeSlider min={timeSliderMin} max={timeSliderMax} value={timestamp} onChange={onSliderChange}></TimeSlider>
 				<PosViewer posDims={posDims} network={network} trajectories={trajectories} timestamp={timestamp} width={1800} height={200}></PosViewer>

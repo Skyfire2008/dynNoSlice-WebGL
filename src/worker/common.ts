@@ -14,7 +14,10 @@ namespace worker {
 		ReloadDone = "ReloadDone",
 
 		Step = "Step",
-		Done = "Done"
+		Done = "Done",
+
+		Experiment = "Experiment",
+		ExperimentDone = "ExperimentDone"
 	}
 
 	export interface Message {

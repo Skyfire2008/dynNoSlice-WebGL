@@ -37,7 +37,15 @@
 	padding: 0px 10px 0px 0px;
 }
 
-.setting .num-input {
+.num-input {
 	width: 50px;
 	text-align: end;
+}
+
+.runControls {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	width: 1280px;
+	justify-content: space-between;
 }

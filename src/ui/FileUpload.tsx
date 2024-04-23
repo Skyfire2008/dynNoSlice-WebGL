@@ -9,9 +9,10 @@ namespace dynnoslice.ui {
 		accept: string;
 		label: string;
 		callback: (file: File) => void;
+		disabled: boolean;
 	}
 
-	export const FileUpload: React.FC<FileUploadProps> = ({ accept, label, callback }) => {
+	export const FileUpload: React.FC<FileUploadProps> = ({ accept, label, callback, disabled }) => {
 
 		const onChange = (e: React.ChangeEvent) => {
 			const input = (e.target as HTMLInputElement);
@@ -32,7 +33,7 @@ namespace dynnoslice.ui {
 		return (
 			<div>
 				<label>{label}</label>
-				<input type="file" accept={accept} onChange={onChange}></input>
+				<input type="file" accept={accept} onChange={onChange} disabled={disabled}></input>
 			</div>
 		);
 	};
