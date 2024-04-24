@@ -1,5 +1,10 @@
 namespace worker {
 
+	/**
+	 * Fetches a shader file using AJAX
+	 * @param file file name
+	 * @returns promise that resolves shader source code
+	 */
 	const fetchShader = (file: string) => {
 		return new Promise<string>((resolve, reject) => {
 			const path = `../shaders/${file}`;
@@ -11,6 +16,52 @@ namespace worker {
 			xhr.open("GET", path);
 			xhr.send();
 		});
+	};
+
+	/**
+	 * Performs a single step of DynNoSlice
+	 * @param forceMultiplier scales the force before applying it to node position
+	 */
+	const step = (forceMultiplier: number) => {
+		//use ping pong index to get correct framebuffer and texture
+		let boundFb = positionFbs[1 - pingPongIndex];
+		let tex = positionTextures[pingPongIndex];
+
+		//render into framebuffer
+		boundFb.bind();
+		graphics.Shader.clear();
+		posShader.use();
+
+		tex.bind(graphics.gl.TEXTURE0);
+		posShader.setInt("posTex", 0);
+		newAdjTexture.bind(graphics.gl.TEXTURE1);
+		posShader.setInt("newAdjTex", 1);
+
+		//set settings
+		posShader.setBool("timeChangeEnabled", settings.timeChangeEnabled);
+		posShader.setFloat("idealEdgeLength", settings.idealEdgeLength);
+		posShader.setFloat("forceMultiplier", forceMultiplier);
+		posShader.setBool("repulsionEnabled", settings.repulsionEnabled);
+		posShader.setBool("attractionEnabled", settings.attractionEnabled);
+		posShader.setBool("trajectoryStraighteningEnabled", settings.trajectoryStraighteningEnabled);
+		posShader.setBool("gravityEnabled", settings.gravityEnabled);
+		posShader.setBool("mentalMapEnabled", settings.mentalMapEnabled);
+
+		posShader.drawQuad();
+
+		pingPongIndex = 1 - pingPongIndex;
+
+		//readPixels to get update positions texture
+		graphics.Shader.readPixels(tex.width, tex.height, posBuf);
+
+		//draw the resulting texture
+		graphics.Shader.unbindFramebuffer();
+		tex = positionTextures[pingPongIndex];
+		graphics.Shader.clear();
+		quadShader.use();
+		tex.bind(graphics.gl.TEXTURE0);
+		quadShader.setInt("posTex", 0);
+		quadShader.drawQuad();
 	};
 
 	const ctx: Worker = <any>self;
@@ -131,49 +182,12 @@ namespace worker {
 			}
 			case (MessageType.Step): {
 
-				//use ping pong index to et correct framebuffer and texture
-				let boundFb = positionFbs[1 - pingPongIndex];
-				let tex = positionTextures[pingPongIndex];
+				step(0.01);
 
-				//render into framebuffer
-				boundFb.bind();
-				graphics.Shader.clear();
-				posShader.use();
-
-				tex.bind(graphics.gl.TEXTURE0);
-				posShader.setInt("posTex", 0);
-				newAdjTexture.bind(graphics.gl.TEXTURE1);
-				posShader.setInt("newAdjTex", 1);
-
-				//set settings
-				posShader.setBool("timeChangeEnabled", settings.timeChangeEnabled);
-				posShader.setFloat("idealEdgeLength", settings.idealEdgeLength);
-				posShader.setBool("repulsionEnabled", settings.repulsionEnabled);
-				posShader.setBool("attractionEnabled", settings.attractionEnabled);
-				posShader.setBool("trajectoryStraighteningEnabled", settings.trajectoryStraighteningEnabled);
-				posShader.setBool("gravityEnabled", settings.gravityEnabled);
-				posShader.setBool("mentalMapEnabled", settings.mentalMapEnabled);
-
-				posShader.drawQuad();
-
-				pingPongIndex = 1 - pingPongIndex;
-
-				//readPixels to get update positions texture
-				graphics.Shader.readPixels(tex.width, tex.height, posBuf);
-
-				//draw the resulting texture
-				graphics.Shader.unbindFramebuffer();
-				tex = positionTextures[pingPongIndex];
-				graphics.Shader.clear();
-				quadShader.use();
-				tex.bind(graphics.gl.TEXTURE0);
-				quadShader.setInt("posTex", 0);
-				quadShader.drawQuad();
-
-				iterations++;
+				/*iterations++;
 				if (iterations % 1000 == 0) {
 					console.log(iterations);
-				}
+				}*/
 
 				ctx.postMessage({ type: MessageType.Done });
 				break;
@@ -182,6 +196,17 @@ namespace worker {
 				settings = ev.data.payload as dynnoslice.ui.Settings;
 
 				ctx.postMessage({ type: MessageType.SettingsDone });
+				break;
+			}
+			case (MessageType.Experiment): {
+				const iterations = ev.data.payload as number;
+				const start = performance.now();
+
+				for (let i = 0; i < iterations; i++) {
+					step((iterations - i) / iterations);
+				}
+
+				ctx.postMessage({ type: MessageType.ExperimentDone, payload: performance.now() - start });
 				break;
 			}
 			default: {

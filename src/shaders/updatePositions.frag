@@ -400,17 +400,13 @@ void main() {
 
 	//add mental map preservation force
 	if(mentalMapEnabled) {
-		totalForce += getMentalMapForce(pixelCoords, pos);
+		totalForce += 0.5f * getMentalMapForce(pixelCoords, pos);
 	}
 
 	Interval interval = getValidInterval(pixelCoords, pos);
 
 	//scale the force
-	if(forceMultiplier == 0.0f) {
-		totalForce *= 0.01f;
-	} else {
-		totalForce *= forceMultiplier;
-	}
+	totalForce *= 0.01f * forceMultiplier;
 
 	//update position
 	pos.xyz += totalForce;

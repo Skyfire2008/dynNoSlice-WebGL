@@ -38,22 +38,23 @@ namespace dynnoslice.ui {
 			thread.current.addEventListener("message", (e: MessageEvent<worker.Message>) => {
 				switch (e.data.type) {
 					case (worker.MessageType.InitialSetupDone): {
+						break;
+					}
+					case (worker.MessageType.InputDone): { //worker has loaded the data
+						posDims.current = e.data.payload.posDims;
+						posBuf.current = e.data.payload.posBuf;
+						setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
+						break;
+					}
+					case (worker.MessageType.ReloadDone): { // worker compelted reloading the data
+						posDims.current = e.data.payload.posDims;
+						posBuf.current = e.data.payload.posBuf;
+						setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
+						break;
+					}
+					case (worker.MessageType.Done): { //worker is done with current step
 
-						break;
-					}
-					case (worker.MessageType.InputDone): {
-						posDims.current = e.data.payload.posDims;
-						posBuf.current = e.data.payload.posBuf;
-						setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
-						break;
-					}
-					case (worker.MessageType.ReloadDone): {
-						posDims.current = e.data.payload.posDims;
-						posBuf.current = e.data.payload.posBuf;
-						setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
-						break;
-					}
-					case (worker.MessageType.Done): {
+						//update layout synchronously with frame
 						if (frameId.current == null) {
 							frameId.current = requestAnimationFrame(() => {
 								frameId.current = null;
@@ -69,6 +70,18 @@ namespace dynnoslice.ui {
 						if (running.current == true) {
 							step();
 						}
+						break;
+					}
+					case (worker.MessageType.ExperimentDone): { //worker completed the experiment
+						frameId.current = requestAnimationFrame(() => {
+							frameId.current = null;
+							setTrajectories(util.getTrajectories(posBuf.current, posDims.current.width));
+						});
+
+						alert(`Experiment over in ${e.data.payload} milliseconds!`);
+
+						setExperimentRunning(false);
+						break;
 					}
 				}
 			});
@@ -156,6 +169,7 @@ namespace dynnoslice.ui {
 		};
 
 		const runExperiment = () => {
+			thread.current.postMessage({ type: worker.MessageType.Experiment, payload: experimentIterations });
 			setExperimentRunning(true);
 		};
 
