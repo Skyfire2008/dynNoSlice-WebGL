@@ -1,8 +1,7 @@
 "use strict";
 
 const fs = require("fs").promises;
-const getEdgeId = require("./util").getEdgeId;
-const yearsToIntervals = require("./util").momentsToIntervals;
+const util = require("./util");
 
 fs.readFile("test data/infoVis.txt").then((buf) => {
 	const contents = buf.toString();
@@ -68,7 +67,7 @@ fs.readFile("test data/infoVis.txt").then((buf) => {
 				const author1 = authors[j];
 
 				//get edge
-				const edgeId = getEdgeId(author0.id, author1.id);
+				const edgeId = util.getEdgeId(author0.id, author1.id);
 				let edge = edges.get[edgeId];
 				if (edge == null) {
 					edge = {
@@ -96,7 +95,7 @@ fs.readFile("test data/infoVis.txt").then((buf) => {
 	for (const node of nodes.values()) {
 		result.nodes[node.id] = {
 			label: node.label,
-			intervals: yearsToIntervals(node.years)
+			intervals: util.momentsToIntervals(node.years)
 		}
 	}
 
@@ -105,20 +104,10 @@ fs.readFile("test data/infoVis.txt").then((buf) => {
 		result.edges.push({
 			from: edge.from,
 			to: edge.to,
-			intervals: yearsToIntervals(edge.years)
+			intervals: util.momentsToIntervals(edge.years)
 		});
 	}
 
 	//stringify and save to file
-	function replacer(key, value) {
-		if (value instanceof Array && typeof value[0] == "number") {
-			return `[${value[0]}, ${value[1]}]`; // place interval arrays on the same line
-		} else {
-			return value;
-		}
-	}
-
-	//JSON.stringify wraps interval arrays into "", remove them
-	const jsonText = JSON.stringify(result, replacer, "\t").replaceAll("\"[", "[").replaceAll("]\"", "]");
-	fs.writeFile("test data/infoVis.json", jsonText);
+	util.writeToFile(result, "test data/infoVis.json");
 });

@@ -1,8 +1,7 @@
 "use strict";
 
 const fs = require("fs").promises;
-const getEdgeId = require("./util").getEdgeId;
-const daysToIntervals = require("./util").momentsToIntervals;
+const util = require("./util");
 
 //if mode is set to "days", tweets are aggregated over days
 const mode = "days";
@@ -56,7 +55,7 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 			}
 
 			//get edge
-			const edgeId = getEdgeId(node0.id, node1.id);
+			const edgeId = util.getEdgeId(node0.id, node1.id);
 			let edge = edges.get(edgeId);
 			if (edge == null) {
 				edge = {
@@ -104,7 +103,7 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 			result.edges.push({
 				from: edge.from,
 				to: edge.to,
-				intervals: daysToIntervals(edge.days)
+				intervals: util.momentsToIntervals(edge.days)
 			});
 		}
 	} else {
@@ -114,15 +113,5 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 	}
 
 	//stringify and save to file
-	function replacer(key, value) {
-		if (value instanceof Array && typeof value[0] == "number") {
-			return `[${value[0]}, ${value[1]}]`; // place interval arrays on the same line
-		} else {
-			return value;
-		}
-	}
-
-	//JSON.stringify wraps interval arrays into "", remove them
-	const jsonText = JSON.stringify(result, replacer, "\t").replaceAll("\"[", "[").replaceAll("]\"", "]");
-	fs.writeFile(`test data/rugby${mode == "days" ? "-days" : ""}.json`, jsonText);
+	util.writeToFile(result, `test data/rugby${mode == "days" ? "-days" : ""}.json`);
 });
