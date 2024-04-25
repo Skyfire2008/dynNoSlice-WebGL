@@ -6,7 +6,7 @@ const yearsToIntervals = require("./util").momentsToIntervals;
 
 fs.readFile("test data/infoVis.txt").then((buf) => {
 	const contents = buf.toString();
-	const nodes = new Map(); //author -> author object
+	const nodes = new Map(); //author name -> author object
 	const edges = new Map(); //edge id -> edge object
 
 	//split the contents by empty lines

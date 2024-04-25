@@ -181,13 +181,7 @@ namespace worker {
 				break;
 			}
 			case (MessageType.Step): {
-
-				step(0.01);
-
-				/*iterations++;
-				if (iterations % 1000 == 0) {
-					console.log(iterations);
-				}*/
+				step(1);
 
 				ctx.postMessage({ type: MessageType.Done });
 				break;

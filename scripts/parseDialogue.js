@@ -1,10 +1,8 @@
 "use strict";
 
+const util = require("./util");
+
 //TODO: convert to typescript
-const fs = require("fs").promises;
-const path = require("path");
-const getEdgeId = require("./util").getEdgeId;
-const chaptersToIntervals = require("./util").momentsToIntervals;
 
 /*
 interface IntermediateEdge{
@@ -22,121 +20,88 @@ interface IntermediateNode{
 }
 */
 
+util.loadNumberedFiles("test data/dialogues", /chapter_([0-9]+).txt/).then((chapters) => {
 
+	const nodes = new Map(); // maps speaker names to speaker objects, string -> IntermediateNode
+	let nodeNum = 0;
+	const edges = new Map(); // number -> IntermediateEdge
 
-fs.readdir("test data/dialogues").then((fileNames) => {
-	const chapterPromises = [];
-	const chapters = [];
+	for (let chapterNum = 0; chapterNum < chapters.length; chapterNum++) {
+		const chapter = chapters[chapterNum];
 
-	const reg = /chapter_([0-9]+).txt/;
+		//split chapter into separate dialogues
+		const dialogues = chapter.split("\n");
 
-	for (const fileName of fileNames) {
-		//get chapter number
-		const match = reg.exec(fileName);
-		const num = Number.parseInt(match[1], 10) - 1; //chapters start from 1
+		for (const dialogue of dialogues) {
 
-		//read chapter
-		chapterPromises.push(
-			fs.readFile(path.resolve("test data/dialogues", fileName)).then((buf) => {
-				chapters[num] = buf.toString();
-				return "done";
-			})
-		);
-	}
+			if (dialogue == "") {
+				//skip last line of chapter, which is empty
+				continue;
+			}
 
-	Promise.all(chapterPromises).then(() => {
+			//separate speakers participating in the dialogue
+			const speakerNames = dialogue.split("\t");
+			const speakers = [nodes.get(speakerNames[0]), nodes.get(speakerNames[1])];
 
-		const nodes = new Map(); // maps speaker names to speaker objects, string -> IntermediateNode
-		let nodeNum = 0;
-		const edges = new Map(); // number -> IntermediateEdge
+			for (let i = 0; i < 2; i++) {
 
-		for (let chapterNum = 0; chapterNum < chapters.length; chapterNum++) {
-			const chapter = chapters[chapterNum];
-
-			//split chapter into separate dialogues
-			const dialogues = chapter.split("\n");
-
-			for (const dialogue of dialogues) {
-
-				if (dialogue == "") {
-					//skip last line of chapter, which is empty
-					continue;
-				}
-
-				//separate speakers participating in the dialogue
-				const speakerNames = dialogue.split("\t");
-				const speakers = [nodes.get(speakerNames[0]), nodes.get(speakerNames[1])];
-
-				for (let i = 0; i < 2; i++) {
-
-					//if node doesn't exist, create it
-					if (speakers[i] == null) {
-						speakers[i] = {
-							id: nodeNum++,
-							label: speakerNames[i],
-							chapters: [chapterNum]
-						};
-						nodes.set(speakerNames[i], speakers[i]);
-					} else {
-						//otherwise just update node's chapters
-						if (speakers[i].chapters[speakers[i].chapters.length - 1] != chapterNum) {
-							speakers[i].chapters.push(chapterNum);
-						}
+				//if node doesn't exist, create it
+				if (speakers[i] == null) {
+					speakers[i] = {
+						id: nodeNum++,
+						label: speakerNames[i],
+						chapters: [chapterNum]
+					};
+					nodes.set(speakerNames[i], speakers[i]);
+				} else {
+					//otherwise just update node's chapters
+					if (speakers[i].chapters[speakers[i].chapters.length - 1] != chapterNum) {
+						speakers[i].chapters.push(chapterNum);
 					}
 				}
+			}
 
-				//add new edge if necessary
-				const edgeId = getEdgeId(speakers[0].id, speakers[1].id);
-				let edge = edges.get(edgeId);
-				if (edge == null) {
-					edge = {
-						from: speakers[0].id,
-						to: speakers[1].id,
-						chapters: []
-					};
-					edges.set(edgeId, edge);
-				}
+			//add new edge if necessary
+			const edgeId = util.getEdgeId(speakers[0].id, speakers[1].id);
+			let edge = edges.get(edgeId);
+			if (edge == null) {
+				edge = {
+					from: speakers[0].id,
+					to: speakers[1].id,
+					chapters: []
+				};
+				edges.set(edgeId, edge);
+			}
 
-				//update edge chapters if necessary
-				if (edge.chapters[edge.chapters.length - 1] != chapterNum) {
-					edge.chapters.push(chapterNum);
-				}
+			//update edge chapters if necessary
+			if (edge.chapters[edge.chapters.length - 1] != chapterNum) {
+				edge.chapters.push(chapterNum);
 			}
 		}
+	}
 
-		const result = {
-			nodes: [],
-			edges: []
-		};
+	const result = {
+		nodes: [],
+		edges: []
+	};
 
-		//convert maps to arrays
-		for (const node of nodes.values()) {
-			result.nodes[node.id] = {
-				label: node.label,
-				intervals: chaptersToIntervals(node.chapters)
-			}
+	//convert maps to arrays
+	for (const node of nodes.values()) {
+		result.nodes[node.id] = {
+			label: node.label,
+			intervals: util.momentsToIntervals(node.chapters)
 		}
+	}
 
-		//split edge into intervals
-		for (const edge of edges.values()) {
-			result.edges.push({
-				from: edge.from,
-				to: edge.to,
-				intervals: chaptersToIntervals(edge.chapters)
-			});
-		}
+	//split edge into intervals
+	for (const edge of edges.values()) {
+		result.edges.push({
+			from: edge.from,
+			to: edge.to,
+			intervals: util.momentsToIntervals(edge.chapters)
+		});
+	}
 
-		//stringify and save to file
-		function replacer(key, value) {
-			if (value instanceof Array && typeof value[0] == "number") {
-				return `[${value[0]}, ${value[1]}]`; // place interval arrays on the same line
-			} else {
-				return value;
-			}
-		}
-
-		//JSON.stringify wraps interval arrays into "", remove them
-		const jsonText = JSON.stringify(result, replacer, "\t").replaceAll("\"[", "[").replaceAll("]\"", "]");
-		fs.writeFile("test data/dialogues.json", jsonText);
-	});
+	//stringify and save to file
+	util.writeToFile(result, "test data/dialogues.json");
 });
