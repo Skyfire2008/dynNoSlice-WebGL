@@ -3,8 +3,8 @@
 const fs = require("fs").promises;
 const util = require("./util");
 
-//if mode is set to "days", tweets are aggregated over days
-const mode = "days";
+//mode can be set to "days" or "weeks" to aggregate over days or weeks respectively
+const mode = "weeks";
 
 fs.readFile("test data/rugby.csv").then((buf) => {
 	const contents = buf.toString();
@@ -26,6 +26,8 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 			//is mode is days, convert to days
 			if (mode == "days") {
 				timestamp = Math.floor(timestamp / (24 * 3600));
+			} else if (mode == "weeks") {
+				timestamp = Math.floor(timestamp / (7 * 24 * 3600))
 			}
 
 			//update overall start and end time
@@ -66,6 +68,8 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 
 				if (mode == "days") {
 					edge.days = [];
+				} else if (mode == "weeks") {
+					edge.weeks = [];
 				}
 
 				edges.set(edgeId, edge);
@@ -75,6 +79,10 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 			if (mode == "days") {
 				if (!edge.days.includes(timestamp)) {
 					edge.days.push(timestamp);
+				}
+			} else if (mode == "weeks") {
+				if (!edge.weeks.includes(timestamp)) {
+					edge.weeks.push(timestamp);
 				}
 			} else {
 				edge.intervals.push([timestamp, timestamp + 1]);
@@ -98,12 +106,12 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 		result.nodes[node.id] = node;
 	}
 
-	if (mode == "days") {
+	if (mode != null) {
 		for (const edge of edges.values()) {
 			result.edges.push({
 				from: edge.from,
 				to: edge.to,
-				intervals: util.momentsToIntervals(edge.days)
+				intervals: util.momentsToIntervals(edge[mode])
 			});
 		}
 	} else {
@@ -113,5 +121,5 @@ fs.readFile("test data/rugby.csv").then((buf) => {
 	}
 
 	//stringify and save to file
-	util.writeToFile(result, `test data/rugby${mode == "days" ? "-days" : ""}.json`);
+	util.writeToFile(result, `test data/rugby${mode != null ? `-${mode}` : ""}.json`);
 });

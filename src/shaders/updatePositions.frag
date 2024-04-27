@@ -67,66 +67,7 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 
 	force = idealEdgeLength * idealEdgeLength * force / dot(force, force);
 
-	return 2.0f * force;
-}
-
-vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
-	int maxPosNum = textureSize(posTex, 0).x;
-	vec3 resultForce = vec3(0.0f);
-
-	//get number of adjacencies
-	int adjNum = int(texelFetch(newAdjTex, ivec2(0, pixelCoords.y), 0).r);
-
-	//for every adjacency...
-	for(int i = 0; i < adjNum; i++) {
-		//get interval for this adjacency
-		vec4 foo = texelFetch(newAdjTex, ivec2(i + 1, pixelCoords.y), 0);
-		Interval curInterval = Interval(foo.y, foo.z);
-
-		//if position outside of interval, skip
-		if(pos.z < curInterval.t0 || pos.z > curInterval.t1) {
-			continue;
-		}
-
-		//go through positions of adjacent node
-		int adjNode = int(foo.r);
-		vec4 prevAdjPos = texelFetch(posTex, ivec2(0, adjNode), 0);
-		for(int j = 0; j < maxPosNum; j++) {
-
-			vec4 adjPos = texelFetch(posTex, ivec2(j, adjNode), 0);
-
-			//if adjacent node's previous position is after point, break
-			if(prevAdjPos.z > pos.z) {
-				break;
-			}
-
-			//if adjacent node's positions have ended, break
-			if(adjPos.a == 0.0f && prevAdjPos.a == 0.0f) {
-				break;
-			}
-
-			//if point exists within adjacent node's current segment, apply force
-			if(prevAdjPos.z <= pos.z && pos.z <= adjPos.z) {
-
-				vec4 otherPos = vec4(0.0f);
-				if(adjPos.z - prevAdjPos.z > 0.0f) {
-					otherPos = mix(prevAdjPos, adjPos, (pos.z - prevAdjPos.z) / (adjPos.z - prevAdjPos.z));
-				} else {
-					otherPos = adjPos;
-				}
-
-				vec3 force = otherPos.xyz - pos.xyz;
-				force *= length(force) / idealEdgeLength;
-
-				resultForce += force;
-				break;
-			}
-
-			prevAdjPos = adjPos;
-		}
-	}
-
-	return resultForce;
+	return force;
 }
 
 /*
@@ -377,7 +318,7 @@ void main() {
 					}
 
 					vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
-					totalForce += getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
+					totalForce += 2.0f * getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
 				}
 			}
 		}
