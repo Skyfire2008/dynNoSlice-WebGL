@@ -2,6 +2,7 @@ namespace dynnoslice.ui {
 
 	export const App = () => {
 		const [network, setNetwork] = React.useState<ExtNetwork>(null);
+		const fileName = React.useRef<string>("");
 		const posBuf = React.useRef<Float32Array>(null);
 		const posDims = React.useRef<math.Dims>(null);
 		const [trajectories, setTrajectories] = React.useState<Array<util.Trajectory>>([]);
@@ -107,6 +108,7 @@ namespace dynnoslice.ui {
 		 */
 		const onFileInput = (file: File) => {
 			const json = JSON.parse(file.contents);
+			fileName.current = file.name;
 			const network = new ExtNetwork(json);
 			setNetwork(network);
 
@@ -147,8 +149,13 @@ namespace dynnoslice.ui {
 				result.nodes.push(node);
 			}
 
+			//to be used by MultiDynNos
+			result.idealEdgeLength = settings.idealEdgeLength;
+
 			const a = document.createElement("a");
-			a.download = "graph.json";
+			//make file name
+			const downloadName = fileName.current.substring(0, fileName.current.lastIndexOf(".")) + "-output.json";
+			a.download = downloadName;
 			a.href = URL.createObjectURL(new Blob([JSON.stringify(result)]));
 			a.addEventListener("click", (e) => setTimeout(() => URL.revokeObjectURL(a.href), 1000));
 			a.click();

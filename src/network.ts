@@ -27,6 +27,7 @@ namespace dynnoslice {
 	export interface OutputNetwork {
 		nodes: Array<OutputNode>;
 		edges: Array<Edge>;
+		idealEdgeLength?: number;
 	}
 
 	interface Color {
