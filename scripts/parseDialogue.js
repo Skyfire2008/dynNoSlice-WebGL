@@ -20,6 +20,9 @@ interface IntermediateNode{
 }
 */
 
+//if mode is set to "keep nodes", nodes will no be removed from chapters where the character has no dialogue
+const mode = "keepNodes";
+
 util.loadNumberedFiles("test data/dialogues", /chapter_([0-9]+).txt/).then((chapters) => {
 
 	const nodes = new Map(); // maps speaker names to speaker objects, string -> IntermediateNode
@@ -86,10 +89,19 @@ util.loadNumberedFiles("test data/dialogues", /chapter_([0-9]+).txt/).then((chap
 	};
 
 	//convert maps to arrays
-	for (const node of nodes.values()) {
-		result.nodes[node.id] = {
-			label: node.label,
-			intervals: util.momentsToIntervals(node.chapters)
+	if (mode == "keepNodes") {
+		for (const node of nodes.values()) {
+			result.nodes[node.id] = {
+				label: node.label,
+				intervals: [[node.chapters[0], chapters.length]]
+			};
+		}
+	} else {
+		for (const node of nodes.values()) {
+			result.nodes[node.id] = {
+				label: node.label,
+				intervals: util.momentsToIntervals(node.chapters)
+			};
 		}
 	}
 
@@ -103,5 +115,5 @@ util.loadNumberedFiles("test data/dialogues", /chapter_([0-9]+).txt/).then((chap
 	}
 
 	//stringify and save to file
-	util.writeToFile(result, "test data/dialogues.json");
+	util.writeToFile(result, `test data/dialogues-${mode != null ? mode : ""}.json`);
 });

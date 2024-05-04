@@ -318,7 +318,7 @@ void main() {
 					}
 
 					vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
-					totalForce += 2.0f * getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
+					totalForce += 4.0f * getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
 				}
 			}
 		}
@@ -331,7 +331,7 @@ void main() {
 
 	//add gravity
 	if(gravityEnabled) {
-		totalForce += getGravityForce(pos);
+		totalForce += 0.5f * getGravityForce(pos);
 	}
 
 	//add trajectory smoothing force
