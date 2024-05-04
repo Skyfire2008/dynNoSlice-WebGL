@@ -3,11 +3,12 @@ namespace dynnoslice.ui {
 	interface ConfigProps {
 		settings: Settings;
 		disabled: boolean;
+		hasExistingLayout: boolean;
 		onSettingsChange: (settings: Settings) => void;
 		onReload: () => void;
 	}
 
-	export const Config: React.FC<ConfigProps> = ({ settings, disabled, onSettingsChange, onReload }) => {
+	export const Config: React.FC<ConfigProps> = ({ settings, disabled, hasExistingLayout, onSettingsChange, onReload }) => {
 
 		const onCheck = (name: string) => {
 			return (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,11 +43,11 @@ namespace dynnoslice.ui {
 				</div>
 				<div className="setting">
 					<label>Enabled bends:</label>
-					<input type="checkbox" checked={settings.bendsEnabled} onChange={onCheck("bendsEnabled")} disabled={disabled}></input>
+					<input type="checkbox" checked={settings.bendsEnabled} onChange={onCheck("bendsEnabled")} disabled={disabled || settings.useExistingLayout}></input>
 				</div>
 				<div className="setting">
 					<label>Bend time interval:</label>
-					<input className="num-input" defaultValue={settings.bendInterval} disabled={!settings.bendsEnabled || disabled} onBlur={onNumberChange("bendInterval", (value) => value <= 0)}></input>
+					<input className="num-input" defaultValue={settings.bendInterval} disabled={!settings.bendsEnabled || disabled || settings.useExistingLayout} onBlur={onNumberChange("bendInterval", (value) => value <= 0)}></input>
 				</div>
 				<div className="setting">
 					<label>Enable bend time change:</label>
@@ -71,6 +72,10 @@ namespace dynnoslice.ui {
 				<div className="setting">
 					<label>Enable mental map preservation:</label>
 					<input type="checkbox" checked={settings.mentalMapEnabled} onChange={onCheck("mentalMapEnabled")} disabled={disabled}></input>
+				</div>
+				<div className="setting">
+					<label>Use existing layout:</label>
+					<input type="checkbox" checked={settings.useExistingLayout} onChange={onCheck("useExistingLayout")} disabled={disabled || !hasExistingLayout}></input>
 				</div>
 				<button onClick={onReload} disabled={disabled}>Reload dataset</button>
 			</div>

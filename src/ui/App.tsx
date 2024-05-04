@@ -28,7 +28,8 @@ namespace dynnoslice.ui {
 			attractionEnabled: true,
 			trajectoryStraighteningEnabled: true,
 			gravityEnabled: true,
-			mentalMapEnabled: true
+			mentalMapEnabled: true,
+			useExistingLayout: false
 		});
 
 		//initialization
@@ -108,6 +109,12 @@ namespace dynnoslice.ui {
 			const json = JSON.parse(file.contents);
 			const network = new ExtNetwork(json);
 			setNetwork(network);
+
+			//reset settings.useExistingLayout if graph has no existing layout
+			if (!network.hasExistingLayout && settings.useExistingLayout) {
+				const newSettings = Object.assign({}, settings, { useExistingLayout: false });
+				onSettingsChange(newSettings); //theoretically, need to wait for response from worker before sending it the input, but this should be fine
+			}
 
 			//reset trajectories
 			setTrajectories([]);
@@ -191,7 +198,7 @@ namespace dynnoslice.ui {
 				</div>
 				<div className="row">
 					<GraphSvg width={1280} height={720} network={network} timestamp={timestamp} trajectories={trajectories} posDims={posDims.current}></GraphSvg>
-					<Config settings={settings} disabled={experimentRunning} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
+					<Config settings={settings} disabled={experimentRunning} hasExistingLayout={network?.hasExistingLayout == true} onSettingsChange={onSettingsChange} onReload={reloadDataset}></Config>
 				</div>
 				<div className="runControls">
 					<div>

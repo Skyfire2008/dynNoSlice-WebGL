@@ -121,7 +121,7 @@ namespace worker {
 				network = new dynnoslice.ExtNetwork(ev.data.payload);
 
 				//put network buffers into textures
-				[posBuf, posDims] = network.genPositionsBuffer(settings.bendsEnabled ? settings.bendInterval : Number.POSITIVE_INFINITY, true);
+				[posBuf, posDims] = network.genPositionsBuffer(settings.bendsEnabled ? settings.bendInterval : Number.POSITIVE_INFINITY, true, settings.useExistingLayout);
 				const [newAdjBuf, newAdjDims] = network.genNewAdjacenciesBuffer();
 
 				//cleanup old GPU data
@@ -157,7 +157,7 @@ namespace worker {
 
 			case (MessageType.Reload): {
 				//put network buffers into textures
-				[posBuf, posDims] = network.genPositionsBuffer(settings.bendsEnabled ? settings.bendInterval : Number.POSITIVE_INFINITY, true);
+				[posBuf, posDims] = network.genPositionsBuffer(settings.bendsEnabled ? settings.bendInterval : Number.POSITIVE_INFINITY, true, settings.useExistingLayout);
 
 				//cleanup old GPU data
 				for (let i = 0; i < 2; i++) {

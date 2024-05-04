@@ -39,6 +39,7 @@ namespace dynnoslice.ui {
 		gravityEnabled: boolean;
 		trajectoryStraighteningEnabled: boolean;
 		mentalMapEnabled: boolean;
+		useExistingLayout: boolean;
 		[key: string]: any;
 	}
 

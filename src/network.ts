@@ -3,11 +3,11 @@ namespace dynnoslice {
 	export type Interval = [number, number];
 
 	export interface Network {
-		nodes: Array<Node>;
+		nodes: Array<InputNode | OutputNode>;
 		edges: Array<Edge>;
 	}
 
-	export interface Node {
+	export interface InputNode {
 		label: string;
 		intervals: Array<Interval>;
 	}
@@ -36,14 +36,34 @@ namespace dynnoslice {
 		a: number;
 	}
 
-	export class ExtNetwork implements Network {
+	interface Node extends InputNode {
+		trajectories?: Array<Array<{ x: number, y: number, t: number }>>;
+	}
+
+	export class ExtNetwork {
 		public nodes: Array<Node>;
 		public edges: Array<Edge>;
 		public startTime: number;
 		public endTime: number;
+		public readonly hasExistingLayout: boolean;
 
 		constructor(network: Network) {
-			this.nodes = network.nodes;
+
+			//if has existing layout, intervals are not provided, calculate them
+			this.hasExistingLayout = (network.nodes[0] as OutputNode).trajectories != null;
+			if (this.hasExistingLayout) {
+				this.nodes = [];
+				for (const node of network.nodes) {
+					const intervals: Array<Interval> = [];
+					for (const trajectory of (node as OutputNode).trajectories) {
+						intervals.push([trajectory[0].t, trajectory[trajectory.length - 1].t]);
+					}
+					this.nodes.push({ label: node.label, intervals, trajectories: (node as OutputNode).trajectories });
+				}
+			} else {
+				this.nodes = (network.nodes as Array<InputNode>);
+			}
+
 			this.edges = network.edges;
 
 			this.startTime = Number.POSITIVE_INFINITY;
@@ -58,52 +78,73 @@ namespace dynnoslice {
 		/**
 		 * Generates positions buffer
 		 * @param timeStep time step at which new trajectory points are created
-		 * @param useSharedMemory if set to truee will allocate and return a SharedArrayBuffer
+		 * @param useSharedMemory if set to true will allocate and return a SharedArrayBuffer
+		 * @param useExistingLayout if network had a layout already, will use it
 		 * @returns [buffer, dimensions]
 		 */
-		public genPositionsBuffer(timeStep: number, useSharedMemory?: boolean): [Float32Array, math.Dims] {
+		public genPositionsBuffer(timeStep: number, useSharedMemory: boolean, useExistingLayout: boolean): [Float32Array, math.Dims] {
+
 			//data is stored as R: x, G: y, B: time, A: 0.0 if point is final in trajectory segment, 1.0 otherwise
 			//row Y stores trajectories of node Y
 			const trajectories: Array<Array<Color>> = [];
-
 			let width = 0;
-			for (let i = 0; i < this.nodes.length; i++) {
-				const node = this.nodes[i];
-				const trajectory: Array<Color> = [];
-				let nodeX = Math.random() - 0.5;
-				let nodeY = Math.random() - 0.5;
 
-				//INFO: debug
-				/*if (i == 0) {
-					nodeX = 0;
-					nodeY = 0;
-				} else if (i == 1) {
-					nodeX = 1;
-					nodeY = 0;
-				} else if (i == 2) {
-					nodeX = 1;
-					nodeY = 1;
-				} else if (i == 3) {
-					nodeX = 0;
-					nodeY = 1;
-				}*/
+			if (useExistingLayout) { //assume that grpah has existing layout
+				for (const node of this.nodes) {
+					const result: Array<Color> = [];
 
-				for (const interval of node.intervals) {
-					//subdivide each interval by time step
-					let currentTime = interval[0];
-
-					while (currentTime < interval[1]) {
-						trajectory.push({ r: nodeX, g: nodeY, b: currentTime, a: 1.0 });
-						currentTime += timeStep;
+					//flatten all trajectory parts into one array
+					for (const trajectory of node.trajectories) {
+						for (let i = 0; i < trajectory.length; i++) {
+							const point = trajectory[i];
+							const a = (i == trajectory.length - 1) ? 0.0 : 1.0;
+							result.push({ r: point.x, g: point.y, b: point.t, a });
+						}
 					}
 
-					//interval end is skipped by loop, add it here
-					trajectory.push({ r: nodeX, g: nodeY, b: interval[1], a: 0.0 });
+					trajectories.push(result);
+					width = Math.max(width, result.length);
 				}
+			} else {
 
-				trajectories.push(trajectory);
-				//calculate new width, width is multiplied by 3 since every positions takes up 3 buffer elements
-				width = Math.max(width, trajectory.length);
+				for (let i = 0; i < this.nodes.length; i++) {
+					const node = this.nodes[i];
+					const trajectory: Array<Color> = [];
+					let nodeX = Math.random() - 0.5;
+					let nodeY = Math.random() - 0.5;
+
+					//INFO: debug
+					/*if (i == 0) {
+						nodeX = 0;
+						nodeY = 0;
+					} else if (i == 1) {
+						nodeX = 1;
+						nodeY = 0;
+					} else if (i == 2) {
+						nodeX = 1;
+						nodeY = 1;
+					} else if (i == 3) {
+						nodeX = 0;
+						nodeY = 1;
+					}*/
+
+					for (const interval of node.intervals) {
+						//subdivide each interval by time step
+						let currentTime = interval[0];
+
+						while (currentTime < interval[1]) {
+							trajectory.push({ r: nodeX, g: nodeY, b: currentTime, a: 1.0 });
+							currentTime += timeStep;
+						}
+
+						//interval end is skipped by loop, add it here
+						trajectory.push({ r: nodeX, g: nodeY, b: interval[1], a: 0.0 });
+					}
+
+					trajectories.push(trajectory);
+					//calculate new width
+					width = Math.max(width, trajectory.length);
+				}
 			}
 
 			//write the arrays into the buffer
