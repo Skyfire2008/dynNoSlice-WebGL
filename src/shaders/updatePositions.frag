@@ -8,6 +8,7 @@ in vec2 texCoords;
 out vec4 fragColor;
 
 uniform sampler2D posTex;
+uniform sampler2D prevPosTex; //previous positions to implement movementAcceleration
 uniform sampler2D newAdjTex;
 
 uniform float idealEdgeLength;
@@ -61,9 +62,9 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 	vec3 force = nodePos - nodeProj;
 
 	//skip if node already too far from the edge
-	/*if(length(force) > 5.0f * idealEdgeLength) {
+	if(length(force) > 10.0f * idealEdgeLength) {
 		return vec3(0.0f);
-	}*/
+	}
 
 	force = idealEdgeLength * idealEdgeLength * force / dot(force, force);
 
@@ -326,7 +327,7 @@ void main() {
 
 	//add attraction force 
 	if(attractionEnabled) {
-		totalForce += 0.5f * getAttractionForce(pixelCoords, pos);
+		totalForce += 0.25f * getAttractionForce(pixelCoords, pos);
 	}
 
 	//add gravity
@@ -341,7 +342,7 @@ void main() {
 
 	//add mental map preservation force
 	if(mentalMapEnabled) {
-		totalForce += 0.5f * getMentalMapForce(pixelCoords, pos);
+		totalForce += 0.75f * getMentalMapForce(pixelCoords, pos);
 	}
 
 	Interval interval = getValidInterval(pixelCoords, pos);
@@ -349,11 +350,30 @@ void main() {
 	//scale the force
 	//totalForce *= 0.01f * forceMultiplier;
 
-	//decrease max movement
+	//constraints:
 	float forceLength = length(totalForce);
-	float maxMovement = forceMultiplier * idealEdgeLength;
-	if(forceLength > maxMovement) {
-		totalForce = totalForce * maxMovement / forceLength;
+	vec3 prevMove = pos.xyz - texelFetch(prevPosTex, pixelCoords, 0).rgb;
+	float prevMoveLength = length(prevMove);
+
+	//decrease maximum movement constraint
+	float decMaxMove = forceMultiplier * idealEdgeLength;
+
+	//movement acceleration constraint
+	float angle = dot(prevMove, totalForce) / (forceLength * prevMoveLength);
+	angle = acos(angle);
+	float moveAccel = prevMoveLength;
+	if(angle < PI / 3.0f) {
+		moveAccel *= 1.0f + 2.0f * (1.0f - 3.0f * angle / PI);
+	} else if(PI / 3.0f <= angle && angle < PI / 2.0f) {
+		//do nothing
+	} else {
+		moveAccel /= 1.0f + 4.0f * (2.0f * angle / PI - 1.0f);
+	}
+
+	//apply constraints
+	float constraint = min(decMaxMove, moveAccel);
+	if(forceLength > constraint) {
+		totalForce *= constraint / forceLength;
 	}
 
 	//update position
