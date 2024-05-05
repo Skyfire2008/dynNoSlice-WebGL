@@ -85,7 +85,7 @@ vec3 getPosInInterval(Interval interval, vec4 a, vec4 b, bool first) {
 	return mix(a, b, mult).xyz;
 }
 
-vec3 getNewAttractionForce(ivec2 pixelCoords, vec4 pos) {
+vec3 getAttractionForce(ivec2 pixelCoords, vec4 pos) {
 	int maxPosNum = textureSize(posTex, 0).x;
 
 	vec3 resultForce = vec3(0.0f);
@@ -326,7 +326,7 @@ void main() {
 
 	//add attraction force 
 	if(attractionEnabled) {
-		totalForce += 0.5f * getNewAttractionForce(pixelCoords, pos);
+		totalForce += 0.5f * getAttractionForce(pixelCoords, pos);
 	}
 
 	//add gravity
@@ -347,7 +347,14 @@ void main() {
 	Interval interval = getValidInterval(pixelCoords, pos);
 
 	//scale the force
-	totalForce *= 0.01f * forceMultiplier;
+	//totalForce *= 0.01f * forceMultiplier;
+
+	//decrease max movement
+	float forceLength = length(totalForce);
+	float maxMovement = forceMultiplier * idealEdgeLength;
+	if(forceLength > maxMovement) {
+		totalForce = totalForce * maxMovement / forceLength;
+	}
 
 	//update position
 	pos.xyz += totalForce;
