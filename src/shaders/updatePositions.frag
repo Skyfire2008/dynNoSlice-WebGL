@@ -62,7 +62,7 @@ vec3 getRepulsiveForce(vec3 nodePos, vec3 edgePos0, vec3 edgePos1) {
 	vec3 force = nodePos - nodeProj;
 
 	//skip if node already too far from the edge
-	if(length(force) > 10.0f * idealEdgeLength) {
+	if(length(force) > 12.0f * idealEdgeLength) {
 		return vec3(0.0f);
 	}
 
@@ -319,7 +319,7 @@ void main() {
 					}
 
 					vec4 edgePos1 = texelFetch(posTex, ivec2(i + 1, id), 0);
-					totalForce += 4.0f * getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
+					totalForce += 3.0f * getRepulsiveForce(pos.xyz, edgePos0.xyz, edgePos1.xyz);
 				}
 			}
 		}
@@ -327,7 +327,7 @@ void main() {
 
 	//add attraction force 
 	if(attractionEnabled) {
-		totalForce += 0.25f * getAttractionForce(pixelCoords, pos);
+		totalForce += 0.5f * getAttractionForce(pixelCoords, pos);
 	}
 
 	//add gravity

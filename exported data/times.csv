@@ -1,0 +1,11 @@
+graph, bends, runtime(seconds)
+
+rugby-days, true, 1.7319050002098083
+rugby-days, false, 0.2108400001525879
+rugby-weeks, true, 0.35405999994277954
+dialogues-keepNodes, true, 1.365664999961853
+dialogues-keepNodes, false, 0.264289999961853
+newcomb, true, 0.23616499996185303
+newcomb, false, 0.18338000011444092
+infoVis, true, 2.8619349999427795
+infoVis, false, 1.7074649996757507
