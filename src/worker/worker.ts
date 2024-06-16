@@ -27,6 +27,9 @@ namespace worker {
 		let boundFb = positionFbs[1 - pingPongIndex];
 		let tex = positionTextures[pingPongIndex];
 
+		//copy previous positions texture
+		graphics.Framebuffer.blit(boundFb, prevPosFb);
+
 		//render into framebuffer
 		boundFb.bind();
 		graphics.Shader.clear();
@@ -36,6 +39,8 @@ namespace worker {
 		posShader.setInt("posTex", 0);
 		newAdjTexture.bind(graphics.gl.TEXTURE1);
 		posShader.setInt("newAdjTex", 1);
+		prevPosTexture.bind(graphics.gl.TEXTURE2);
+		posShader.setInt("prevPosTex", 2);
 
 		//set settings
 		posShader.setBool("timeChangeEnabled", settings.timeChangeEnabled);
@@ -79,6 +84,9 @@ namespace worker {
 	let positionTextures: [graphics.Texture, graphics.Texture] = [null, null];
 	let positionFbs: [graphics.Framebuffer, graphics.Framebuffer] = [null, null];
 	let pingPongIndex = 0;
+
+	let prevPosTexture: graphics.Texture;
+	let prevPosFb: graphics.Framebuffer;
 
 	let settings: dynnoslice.ui.Settings = null;
 	let network: dynnoslice.ExtNetwork = null;
@@ -136,6 +144,10 @@ namespace worker {
 				if (newAdjTexture != null) {
 					newAdjTexture.dispose();
 				}
+				if (prevPosFb != null) {
+					prevPosFb.dispose();
+					prevPosTexture.dispose();
+				}
 
 				//create new textures and framebuffers
 				positionTextures[0] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
@@ -145,6 +157,9 @@ namespace worker {
 					positionFbs[i] = new graphics.Framebuffer(positionTextures[i].id, posDims.width, posDims.height);
 				}
 				pingPongIndex = 0;
+
+				prevPosTexture = graphics.Texture.makePositionTexture(posDims.width, posDims.height, new Float32Array(4 * posDims.width * posDims.height));
+				prevPosFb = new graphics.Framebuffer(prevPosTexture.id, posDims.width, posDims.height);
 
 				//change glCanvas dimensions to positions texture width and height
 				canvas.width = posDims.width;
@@ -168,6 +183,10 @@ namespace worker {
 						positionFbs[i].dispose();
 					}
 				}
+				if (prevPosFb != null) {
+					prevPosFb.dispose();
+					prevPosTexture.dispose();
+				}
 
 				//create new textures and framebuffers
 				positionTextures[0] = graphics.Texture.makePositionTexture(posDims.width, posDims.height, posBuf);
@@ -176,6 +195,9 @@ namespace worker {
 					positionFbs[i] = new graphics.Framebuffer(positionTextures[i].id, posDims.width, posDims.height);
 				}
 				pingPongIndex = 0;
+
+				prevPosTexture = graphics.Texture.makePositionTexture(posDims.width, posDims.height, new Float32Array(4 * posDims.width * posDims.height));
+				prevPosFb = new graphics.Framebuffer(prevPosTexture.id, posDims.width, posDims.height);
 
 				ctx.postMessage({ type: MessageType.ReloadDone, payload: { posBuf, posDims } });
 				break;

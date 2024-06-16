@@ -25,6 +25,14 @@ namespace graphics {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		}
 
+		public static blit(source: Framebuffer, target: Framebuffer) {
+			gl.bindFramebuffer(gl.READ_FRAMEBUFFER, source.fb);
+			gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, target.fb);
+			gl.blitFramebuffer(0, 0, source.width, source.height, 0, 0, source.width, source.height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+			gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+			gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+		}
+
 		public bind() {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, this.fb);
 			gl.viewport(0, 0, this.width, this.height);

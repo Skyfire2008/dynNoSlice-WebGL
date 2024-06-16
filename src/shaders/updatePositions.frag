@@ -347,9 +347,6 @@ void main() {
 
 	Interval interval = getValidInterval(pixelCoords, pos);
 
-	//scale the force
-	//totalForce *= 0.01f * forceMultiplier;
-
 	//constraints:
 	float forceLength = length(totalForce);
 	vec3 prevMove = pos.xyz - texelFetch(prevPosTex, pixelCoords, 0).rgb;
