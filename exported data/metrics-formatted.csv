@@ -1,11 +1,11 @@
 Graph, Scaling, StressOn, StressOff, Movement, Crowding
 
-rugby-days-bends, 0.15, 1.5, 1.48, 460.76, 32
-rugby-days-noBends, 0.22, 3.85, 3.82, 4, 66
-rugby-weeks-bends, 0.26, 13.39, 12.9, 193.96, 75
-dialogues-keepNodes-bends, 0.18, 31.64, 31.64, 75.39, 1608
-dialogues-keepNodes-noBends, 0.22, 60.72, 60.12, 9.79, 6915
-newcomb-bends, 0.32, 64.47, 61.58, 81.85, 161
-newcomb-noBends, 0.42, 71.82, 66.52, 5.51, 136
-infoVis-bends, 0.15, 991.1, 397.62, 27.07, 57444
-infoVis-noBends, 0.15, 723.65, 272.77, 24.3, 61891
+Rugby-days-bends, 0.15, 1.5, 1.48, 460.76, 32
+Rugby-days-noBends, 0.22, 3.85, 3.82, 4, 66
+Rugby-weeks-bends, 0.26, 13.39, 12.9, 193.96, 75
+Dialogues-bends, 0.18, 31.64, 31.64, 75.39, 1608
+Dialogues-noBends, 0.22, 60.72, 60.12, 9.79, 6915
+Newcomb-bends, 0.32, 64.47, 61.58, 81.85, 161
+Newcomb-noBends, 0.42, 71.82, 66.52, 5.51, 136
+InfoVis-bends, 0.15, 991.1, 397.62, 27.07, 57444
+InfoVis-noBends, 0.15, 723.65, 272.77, 24.3, 61891

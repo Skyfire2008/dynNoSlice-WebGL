@@ -17,7 +17,7 @@ fs.readFile(path).then((buf) => {
 		for (const word of words) {
 			const num = Number.parseFloat(word);
 			if (!isNaN(num)) {
-				process.stdout.write(`${Math.round(num * 100) / 100}`);
+				process.stdout.write(`${Math.round(num * 1000) / 1000}`);
 			} else {
 				process.stdout.write(word);
 			}

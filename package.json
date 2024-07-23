@@ -1,6 +1,6 @@
 {
 	"name": "dynnoslice-webgl",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"dependencies": {
 		"react": "latest",
 		"react-dom": "latest",
@@ -11,6 +11,7 @@
 	"scripts": {
 		"compile": "tsc && cd src/worker && tsc",
 		"copy": "node scripts/copy.js",
-		"build": "npm run compile && npm run copy"
+		"build": "npm run compile && npm run copy",
+		"server": "node scripts/server.js 8080 bin"
 	}
 }
