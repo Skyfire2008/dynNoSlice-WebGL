@@ -13,6 +13,8 @@ All the other tools and libraries will be downloaded by the install script.
 
 ## Running
 1. Run `npm run server`
-2. Open [http://localhost:8080/index.html]() in your browser.
-3. Click "Choose file" and load a JSON file from "test data" directory.
-4. Click "Run experiment".
+2. Open [http://localhost:8080/index.html](http://localhost:8080/index.html) in your browser.
+3. Click "Choose file" button in top left corner and load a JSON file from "test data" directory.
+4. Click "Run experiment" button in the bottom right corner.
+5. Use the mouse to pan and zoom into the layout.
+6. Use the slider underneath the layout to select the time.
